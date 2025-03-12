@@ -5,6 +5,8 @@ import Home from './Components/Home'
 import Navbar from './Components/Navbar'
 import Login from './Components/Login'
 import SignUp from './Components/SignUp'
+import Dashboard from './Components/Dashboard'
+import ProtectedRoute from './Components/ProtectedRoute'
 
 
 function App() {
@@ -18,6 +20,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Signup" element={<SignUp />} />
+          <Route path="/Dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </>
