@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+
 
 const Login = () => {
 
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -23,7 +26,7 @@ const Login = () => {
     };
 
     useEffect(() => {
-        axios.get("http://localhost:3000/users")
+        axios.get(import.meta.env.VITE_LOGIN_URL)
         .then((res) => {
             console.log(res.data);
             setUsers(res.data);
@@ -39,15 +42,11 @@ const Login = () => {
         setLoading(true);
         
         try {
-            const response = await axios.post("http://localhost:3000/login", formData);
+            const response = await axios.post(import.meta.env.VITE_LOGIN_URL, formData);
             console.log("Login successful:", response.data);
             
-            // Store token and user data in localStorage
-            localStorage.setItem('token', response.data.token || 'dummy-token');
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            
-            // Trigger a storage event for the Navbar to detect the login
-            window.dispatchEvent(new Event('storage'));
+            // Use the login function from context instead of directly using localStorage
+            login(response.data.user, response.data.token || 'dummy-token');
             
             // Redirect to dashboard
             navigate('/dashboard');
@@ -108,7 +107,7 @@ const Login = () => {
                                 />
                                 <span 
                                     onClick={togglePasswordVisibility} 
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                                    className="absolute right-3 top-1/2 transform -translate-y-[calc(50%+5px)] cursor-pointer"
                                 >
                                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                                 </span>

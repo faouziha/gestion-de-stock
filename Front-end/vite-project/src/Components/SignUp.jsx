@@ -43,7 +43,7 @@ const handleSubmit = async (e) => {
     }
     
     try {
-        const response = await axios.post('http://localhost:3000/register', {
+        const response = await axios.post(import.meta.env.VITE_SIGNUP_URL, {
             name: formData.name,
             lastName: formData.lastName,
             email: formData.email,
@@ -60,7 +60,7 @@ const handleSubmit = async (e) => {
 };
 
 useEffect(() => {
-    axios.get("http://localhost:3000/users")
+    axios.get(import.meta.env.VITE_USERS_URL)
     .then((res) => {
         console.log(res.data);
         setData(res.data);
@@ -134,7 +134,7 @@ return (
                     <span onClick={togglePasswordVisibility} style={{ 
                                         position: 'absolute', 
                                         right: '40%', 
-                                        top: '68%', 
+                                        top: '67.5%', 
                                         transform: 'translateY(-50%)',
                                         cursor: 'pointer',
                                         zIndex: 10
