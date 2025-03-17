@@ -384,9 +384,17 @@ app.delete("/fournisseur/:id", async (req, res) => {
 
 app.get("/commande", (req, res) => {
     try {
-        // Just get all orders without filtering by userId for now
-        const query = "SELECT * FROM commande";
-        db.query(query, (err, result) => {
+        const userId = req.query.userId;
+        let query = "SELECT * FROM commande";
+        let params = [];
+        
+        // Filter by userId if provided
+        if (userId) {
+            query = "SELECT * FROM commande WHERE userId = $1";
+            params = [userId];
+        }
+        
+        db.query(query, params, (err, result) => {
             if (err) {
                 console.error("Error getting commandes:", err);
                 return res.status(500).json({ error: "Internal Server Error" });
@@ -403,8 +411,24 @@ app.get("/commande", (req, res) => {
 
 app.get("/commande/:id", async (req, res) => {
     try {
-        const {id} = req.params;
-        const aCommande = await db.query("SELECT * FROM commande WHERE id = $1", [id])
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        let query = "SELECT * FROM commande WHERE id = $1";
+        let params = [id];
+        
+        // If userId is provided, ensure the order belongs to that user
+        if (userId) {
+            query = "SELECT * FROM commande WHERE id = $1 AND userId = $2";
+            params = [id, userId];
+        }
+        
+        const aCommande = await db.query(query, params);
+        
+        if (aCommande.rows.length === 0) {
+            return res.status(404).json({ error: "Order not found or you don't have permission to view it" });
+        }
+        
         res.json(aCommande.rows[0]);
     } catch (error) {
         console.error("Error getting commande:", error);
@@ -416,7 +440,7 @@ app.get("/commande/:id", async (req, res) => {
 
 app.post("/commande", async (req, res) => {
     try {
-        const { produit_id, nom_produit, quantite, date_commande, userId } = req.body;
+        const { produit_id, nom_produit, quantite, date_commande, userId, customer_name } = req.body;
         
         // Create a basic query with required fields
         let query = "INSERT INTO commande (produit_id, nom_produit, quantite";
@@ -435,6 +459,12 @@ app.post("/commande", async (req, res) => {
             query += ", userId";
             placeholders += ", $" + valueIndex++;
             values.push(userId);
+        }
+        
+        if (customer_name) {
+            query += ", customer_name";
+            placeholders += ", $" + valueIndex++;
+            values.push(customer_name);
         }
         
         // Complete the query
@@ -457,18 +487,46 @@ app.post("/commande", async (req, res) => {
 app.put("/commande/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { produit_id, nom_produit, quantite, date_commande } = req.body;
+        const { produit_id, nom_produit, quantite, date_commande, customer_name, userId } = req.body;
         
-        // Include date_commande in the update if provided
-        let query, values;
+        // First check if the order exists and belongs to the user
+        const checkOrder = await db.query("SELECT * FROM commande WHERE id = $1", [id]);
+        
+        if (checkOrder.rows.length === 0) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
+        // If userId is provided, ensure the order belongs to that user
+        if (userId && checkOrder.rows[0].userId !== userId) {
+            return res.status(403).json({ error: "You don't have permission to update this order" });
+        }
+        
+        // Build the query dynamically based on provided fields
+        let query = "UPDATE commande SET produit_id = $1, nom_produit = $2, quantite = $3";
+        let values = [produit_id, nom_produit, quantite];
+        let paramIndex = 4;
         
         if (date_commande) {
-            query = "UPDATE commande SET produit_id = $1, nom_produit = $2, quantite = $3, date_commande = $4 WHERE id = $5 RETURNING *";
-            values = [produit_id, nom_produit, quantite, date_commande, id];
-        } else {
-            query = "UPDATE commande SET produit_id = $1, nom_produit = $2, quantite = $3 WHERE id = $4 RETURNING *";
-            values = [produit_id, nom_produit, quantite, id];
+            query += `, date_commande = $${paramIndex}`;
+            values.push(date_commande);
+            paramIndex++;
         }
+        
+        if (customer_name) {
+            query += `, customer_name = $${paramIndex}`;
+            values.push(customer_name);
+            paramIndex++;
+        }
+        
+        // Ensure userId is preserved
+        if (userId) {
+            query += `, userId = $${paramIndex}`;
+            values.push(userId);
+            paramIndex++;
+        }
+        
+        query += ` WHERE id = $${paramIndex} RETURNING *`;
+        values.push(id);
         
         const updatedCommande = await db.query(query, values);
         
@@ -487,8 +545,28 @@ app.put("/commande/:id", async (req, res) => {
 
 app.delete("/commande/:id", async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        // If userId is provided, ensure the order belongs to that user
+        if (userId) {
+            const checkOrder = await db.query("SELECT * FROM commande WHERE id = $1", [id]);
+            
+            if (checkOrder.rows.length === 0) {
+                return res.status(404).json({ error: "Order not found" });
+            }
+            
+            if (checkOrder.rows[0].userId !== userId) {
+                return res.status(403).json({ error: "You don't have permission to delete this order" });
+            }
+        }
+        
         const deletedCommande = await db.query("DELETE FROM commande WHERE id = $1 RETURNING *", [id]);
+        
+        if (deletedCommande.rows.length === 0) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
         res.json(deletedCommande.rows[0]);
     } catch (error) {
         console.error("Error deleting commande:", error);

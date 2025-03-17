@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
 
 const SignUp = () => {
 const navigate = useNavigate();
+const { darkMode } = useTheme();
 const [showPassword, setShowPassword] = useState(false);
 const [data, setData] = useState([]);
 const [formData, setFormData] = useState({
@@ -72,15 +74,15 @@ useEffect(() => {
 
 
 return (
-<div className='mt-10 mx-auto text-center'>
-    <div className="flex items-center justify-center h-screen">
-        <div className="bg-white p-8 w-1/4 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-800 text-center">Manage</h2>
-            <h2 className="text-2xl text-gray-800 text-center">Sign Up</h2>
+<div className={`${darkMode ? 'bg-gray-900' : 'bg-gray-100'} mx-auto text-center mt-10`}>
+    <div className="flex items-center justify-center min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+        <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-4 sm:p-6 md:p-8 w-full max-w-md mx-auto rounded-lg shadow-lg transition-colors`}>
+            <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'} text-center`}>Manage</h2>
+            <h2 className={`text-2xl ${darkMode ? 'text-white' : 'text-gray-800'} text-center`}>Sign Up</h2>
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             <form className="mt-6" onSubmit={handleSubmit}>
                 <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                    <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="name">
                         Name
                     </label>
                     <input 
@@ -89,11 +91,11 @@ return (
                         placeholder="name"
                         value={formData.name}
                         onChange={handleChange}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                        className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} leading-tight focus:outline-none focus:shadow-outline transition-colors`}
                     />
                 </div>
                 <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lastName">
+                    <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="lastName">
                         Last name
                     </label>
                     <input 
@@ -102,11 +104,11 @@ return (
                         placeholder="last name"
                         value={formData.lastName}
                         onChange={handleChange}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                        className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} leading-tight focus:outline-none focus:shadow-outline transition-colors`}
                     />
                 </div>
                 <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                    <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="email">
                         Email
                     </label>
                     <input 
@@ -115,56 +117,53 @@ return (
                         placeholder="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                        className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} leading-tight focus:outline-none focus:shadow-outline transition-colors`}
                     />
                 </div>
-                <div className="mb-6">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                <div className="mb-6 relative">
+                    <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="password">
                         Password
                     </label>
-
-                    <input 
-                        type={showPassword ? "text" : "password" } 
-                        id="password" 
-                        placeholder="******************"
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" 
-                    />
-                    <span onClick={togglePasswordVisibility} style={{ 
-                                        position: 'absolute', 
-                                        right: '40%', 
-                                        top: '67.5%', 
-                                        transform: 'translateY(-50%)',
-                                        cursor: 'pointer',
-                                        zIndex: 10
-                                    }}>
-                        {showPassword ?
-                        <FaEyeSlash /> :
-                        <FaEye />}
-                    </span>
-
-                    <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="confirmPassword">
-                            Confirm password
-                        </label>
+                    <div className="relative">
                         <input 
                             type={showPassword ? "text" : "password" } 
-                            id="confirmPassword" 
+                            id="password" 
                             placeholder="******************"
-                            value={formData.confirmPassword}
+                            value={formData.password}
                             onChange={handleChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" 
+                            className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} mb-3 leading-tight focus:outline-none focus:shadow-outline transition-colors`}
                         />
+                        <span 
+                            onClick={togglePasswordVisibility} 
+                            className={`absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                    </div>
+
+                    <div className="mb-6">
+                        <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="confirmPassword">
+                            Confirm password
+                        </label>
+                        <div className="relative">
+                            <input 
+                                type={showPassword ? "text" : "password" } 
+                                id="confirmPassword" 
+                                placeholder="******************"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} mb-3 leading-tight focus:outline-none focus:shadow-outline transition-colors`}
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <Link to={"/Login"} className='text-blue-500 hover:text-blue-700 mb-4 block'>Already have an account?
+                <Link to={"/Login"} className='text-blue-500 hover:text-blue-400 mb-4 block'>Already have an account?
                 </Link>
 
                 <button 
                     type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
                 >
                     Sign Up
                 </button>

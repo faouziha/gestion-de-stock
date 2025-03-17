@@ -3,12 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-
+import { useTheme } from '../context/ThemeContext';
 
 const Login = () => {
-
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { darkMode } = useTheme();
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -64,11 +64,11 @@ const Login = () => {
     };
     
     return (
-        <div>
-            <div className="flex items-center justify-center h-screen">
-                <div className="bg-white p-8 w-1/4 rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-bold text-gray-800 text-center">Manage</h2>
-                    <h2 className="text-2xl text-gray-800 text-center">Login</h2>
+        <div className={`${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+            <div className="flex items-center justify-center min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+                <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-4 sm:p-6 md:p-8 w-full max-w-md mx-auto rounded-lg shadow-lg transition-colors`}>
+                    <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'} text-center`}>Manage</h2>
+                    <h2 className={`text-2xl ${darkMode ? 'text-white' : 'text-gray-800'} text-center`}>Login</h2>
                     
                     {error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
@@ -78,7 +78,7 @@ const Login = () => {
                     
                     <form className="mt-4" onSubmit={handleSubmit}>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                            <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="email">
                                 Email
                             </label>
                             <input 
@@ -87,12 +87,12 @@ const Login = () => {
                                 placeholder="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} leading-tight focus:outline-none focus:shadow-outline transition-colors`} 
                                 required
                             />
                         </div>
                         <div className="mb-6 relative">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                            <label className={`block ${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-bold mb-2`} htmlFor="password">
                                 Password
                             </label>
                             <div className="relative">
@@ -102,25 +102,25 @@ const Login = () => {
                                     placeholder="******************"
                                     value={formData.password}
                                     onChange={handleChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" 
+                                    className={`shadow appearance-none border rounded w-full py-2 px-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white text-gray-700'} mb-3 leading-tight focus:outline-none focus:shadow-outline transition-colors`} 
                                     required
                                 />
                                 <span 
                                     onClick={togglePasswordVisibility} 
-                                    className="absolute right-3 top-1/2 transform -translate-y-[calc(50%+5px)] cursor-pointer"
+                                    className={`absolute right-3 top-1/2 transform -translate-y-[calc(50%+5px)] cursor-pointer ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                                 >
                                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                                 </span>
                             </div>
-                            <Link to={"/ForgotPassword"} className='text-blue-500 hover:text-blue-700'>Forgot Password?</Link>
+                            <Link to={"/ForgotPassword"} className='text-blue-500 hover:text-blue-400'>Forgot Password?</Link>
                         </div>
 
-                        <Link to={"/Signup"} className='text-blue-500 hover:text-blue-700 mb-4 block'>Don't have an account?</Link>
+                        <Link to={"/Signup"} className='text-blue-500 hover:text-blue-400 mb-4 block'>Don't have an account?</Link>
 
                         <button 
                             type="submit"
                             disabled={loading}
-                            className={`w-full ${loading ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-700'} text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`}
+                            className={`w-full ${loading ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-700'} text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors`}
                         >
                             {loading ? 'Signing In...' : 'Sign In'}
                         </button>
