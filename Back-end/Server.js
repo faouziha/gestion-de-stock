@@ -14,11 +14,13 @@ const db = new pg.Client({
 db.connect();
 
 const app = express();
-const Port = 3000;
+const port = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase payload limit for Base64 images
 app.use(cors());
 
+// Serve static files from the uploads directory
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get("/", (req, res) => {
     res.json("Hello World!");
@@ -155,20 +157,55 @@ app.get("/produit/:id", async (req, res) => {
 
 //post product
 
-app.post("/produit",async (req, res) => {
+app.post("/produit", async (req, res) => {
     try {
+        console.log("Received product creation request");
+        
+        // Log the request body structure (without full image data for brevity)
+        const requestBodyLog = { ...req.body };
+        if (requestBodyLog.image) {
+            requestBodyLog.image = `${requestBodyLog.image.substring(0, 30)}... (truncated)`;
+        }
+        console.log("Request body structure:", requestBodyLog);
+        
         const {nom, description, image, total, serial_num, fournisseur_id, prix, user_id} = req.body;
+        
+        // Validate required fields
+        if (!nom) {
+            return res.status(400).json({ error: "Product name is required" });
+        }
+        
+        // Log the values being inserted (without full image)
+        console.log("Inserting product with values:", {
+            nom, 
+            description: description || 'null',
+            image: image ? 'Image data present' : 'No image data',
+            total, 
+            serial_num: serial_num || 'null',
+            fournisseur_id, 
+            prix,
+            user_id
+        });
+        
         const newProduct = await db.query(
             "INSERT INTO produit (nom, description, image, total, serial_num, fournisseur_id, prix, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
             [nom, description, image, total, serial_num, fournisseur_id, prix, user_id]
         );
+        
+        console.log("Product created successfully with ID:", newProduct.rows[0].id);
+        
         res.status(201).json({
             message: "Product created successfully",
             produit: newProduct.rows[0]
         });
     } catch (error) {
         console.error("Error creating product:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error stack:", error.stack);
+        res.status(500).json({ 
+            error: "Internal Server Error", 
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 })
 
@@ -176,27 +213,65 @@ app.post("/produit",async (req, res) => {
 
 app.put("/produit/:id", async (req, res) => {
     try {
+        console.log("Received product update request for ID:", req.params.id);
+        
+        // Log the request body structure (without full image data for brevity)
+        const requestBodyLog = { ...req.body };
+        if (requestBodyLog.image) {
+            requestBodyLog.image = `${requestBodyLog.image.substring(0, 30)}... (truncated)`;
+        }
+        console.log("Request body structure:", requestBodyLog);
+        
         const {id} = req.params;
         const {nom, description, image, total, serial_num, fournisseur_id, prix, user_id} = req.body;
         
-        // First check if the product belongs to the user
+        // Validate required fields
+        if (!nom) {
+            return res.status(400).json({ error: "Product name is required" });
+        }
+        
+        // First check if the product exists
         const productCheck = await db.query("SELECT * FROM produit WHERE id = $1", [id]);
         if (productCheck.rows.length === 0) {
+            console.log("Product not found with ID:", id);
             return res.status(404).json({ error: "Product not found" });
         }
         
+        // Check if the user has permission to update this product
         if (user_id && productCheck.rows[0].user_id !== user_id) {
+            console.log("Permission denied. Product user_id:", productCheck.rows[0].user_id, "Request user_id:", user_id);
             return res.status(403).json({ error: "You don't have permission to update this product" });
         }
+        
+        // Log the values being updated (without full image)
+        console.log("Updating product with values:", {
+            id,
+            nom, 
+            description: description || 'null',
+            image: image ? 'Image data present' : 'No image data',
+            total, 
+            serial_num: serial_num || 'null',
+            fournisseur_id, 
+            prix,
+            user_id: user_id || productCheck.rows[0].user_id
+        });
         
         const updatedProduct = await db.query(
             "UPDATE produit SET nom = $2, description = $3, image = $4, total = $5, serial_num = $6, fournisseur_id = $7, prix = $8, user_id = $9 WHERE id = $1 RETURNING *",
             [id, nom, description, image, total, serial_num, fournisseur_id, prix, user_id || productCheck.rows[0].user_id]
         );
+        
+        console.log("Product updated successfully with ID:", updatedProduct.rows[0].id);
+        
         res.json(updatedProduct.rows[0]);
     } catch (error) {
         console.error("Error updating product:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error stack:", error.stack);
+        res.status(500).json({ 
+            error: "Internal Server Error", 
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 })
 
@@ -309,15 +384,20 @@ app.delete("/fournisseur/:id", async (req, res) => {
 
 app.get("/commande", (req, res) => {
     try {
-        const allCommande = "SELECT * FROM commande"
-        db.query(allCommande, (err, result) => {
+        // Just get all orders without filtering by userId for now
+        const query = "SELECT * FROM commande";
+        db.query(query, (err, result) => {
+            if (err) {
+                console.error("Error getting commandes:", err);
+                return res.status(500).json({ error: "Internal Server Error" });
+            }
             res.json(result.rows);
-        })
+        });
     } catch (error) {
         console.error("Error getting commandes:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
-})
+});
 
 //get a commande
 
@@ -330,43 +410,78 @@ app.get("/commande/:id", async (req, res) => {
         console.error("Error getting commande:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
-})
+});
 
 //post commande
 
 app.post("/commande", async (req, res) => {
     try {
-        const { produit_id, nom_produit, quantite} = req.body;
-        const newCommande = await db.query(
-            "INSERT INTO commande (produit_id, nom_produit, quantite) VALUES ($1, $2, $3) RETURNING *",
-            [produit_id, nom_produit, quantite]
-        );
+        const { produit_id, nom_produit, quantite, date_commande, userId } = req.body;
+        
+        // Create a basic query with required fields
+        let query = "INSERT INTO commande (produit_id, nom_produit, quantite";
+        let values = [produit_id, nom_produit, quantite];
+        let placeholders = "$1, $2, $3";
+        let valueIndex = 4;
+        
+        // Add optional fields if they exist
+        if (date_commande) {
+            query += ", date_commande";
+            placeholders += ", $" + valueIndex++;
+            values.push(date_commande);
+        }
+        
+        if (userId) {
+            query += ", userId";
+            placeholders += ", $" + valueIndex++;
+            values.push(userId);
+        }
+        
+        // Complete the query
+        query += ") VALUES (" + placeholders + ") RETURNING *";
+        
+        const newCommande = await db.query(query, values);
+        
         res.status(201).json({
             message: "Commande created successfully",
             commande: newCommande.rows[0]
         });
     } catch (error) {
         console.error("Error creating commande:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
-})
+});
 
 //update a commande
 
 app.put("/commande/:id", async (req, res) => {
     try {
-        const {id} = req.params;
-        const {produit_id, nom_produit, quantite} = req.body;
-        const updatedCommande = await db.query(
-            "UPDATE commande SET produit_id = $2, nom_produit = $3, quantite = $4 WHERE id = $1 RETURNING *",
-            [id, produit_id, nom_produit, quantite]
-        );
+        const { id } = req.params;
+        const { produit_id, nom_produit, quantite, date_commande } = req.body;
+        
+        // Include date_commande in the update if provided
+        let query, values;
+        
+        if (date_commande) {
+            query = "UPDATE commande SET produit_id = $1, nom_produit = $2, quantite = $3, date_commande = $4 WHERE id = $5 RETURNING *";
+            values = [produit_id, nom_produit, quantite, date_commande, id];
+        } else {
+            query = "UPDATE commande SET produit_id = $1, nom_produit = $2, quantite = $3 WHERE id = $4 RETURNING *";
+            values = [produit_id, nom_produit, quantite, id];
+        }
+        
+        const updatedCommande = await db.query(query, values);
+        
+        if (updatedCommande.rows.length === 0) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
         res.json(updatedCommande.rows[0]);
     } catch (error) {
         console.error("Error updating commande:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
-})
+});
 
 //delete a commande
 
@@ -381,6 +496,6 @@ app.delete("/commande/:id", async (req, res) => {
     }
 })
 
-app.listen(Port, () => {
-    console.log(`Server is running on port ${Port}`);
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });

@@ -6,11 +6,15 @@ import { FaChevronDown, FaChevronRight } from 'react-icons/fa'
 export default function DashboardLayout() {
   const { user } = useAuth();
   const [productsMenuOpen, setProductsMenuOpen] = useState(true); 
+  const [ordersMenuOpen, setOrdersMenuOpen] = useState(false);
   const location = useLocation();
 
   React.useEffect(() => {
     if (location.pathname.includes('product') || location.pathname.includes('products')) {
       setProductsMenuOpen(true);
+    }
+    if (location.pathname.includes('order') || location.pathname.includes('orders')) {
+      setOrdersMenuOpen(true);
     }
   }, [location.pathname]);
 
@@ -56,7 +60,34 @@ export default function DashboardLayout() {
             )}
           </div>
           
-          <Link to="/orders" className="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-md transition-colors">Orders</Link>
+          {/* Orders with dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setOrdersMenuOpen(!ordersMenuOpen)}
+              className="w-full flex justify-between items-center px-4 py-3 bg-green-600 hover:bg-green-700 rounded-md transition-colors"
+            >
+              <span>Orders</span>
+              {ordersMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
+            </button>
+            
+            {ordersMenuOpen && (
+              <div className="ml-4 mt-1 flex flex-col space-y-1">
+                <Link 
+                  to="/orders" 
+                  className={`px-4 py-2 ${location.pathname === '/orders' ? 'bg-green-700' : 'bg-green-500 hover:bg-green-600'} rounded-md transition-colors text-sm`}
+                >
+                  Display Orders
+                </Link>
+                <Link 
+                  to="/orders/add" 
+                  className={`px-4 py-2 ${location.pathname === '/orders/add' ? 'bg-green-700' : 'bg-green-500 hover:bg-green-600'} rounded-md transition-colors text-sm`}
+                >
+                  Add New Order
+                </Link>
+              </div>
+            )}
+          </div>
+          
           <Link to="/suppliers" className="px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-md transition-colors">Fournisseurs</Link>
           <Link to="/clients" className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-md transition-colors">Clients</Link>
         </div>

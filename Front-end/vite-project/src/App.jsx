@@ -12,6 +12,10 @@ import DisplayProduct from './Components/Dashboard components/Product/displayPro
 import DashboardLayout from './Components/DashboardLayout'
 import AddProduct from './Components/Dashboard components/Product/AddProduct'
 import EditProduct from './Components/Dashboard components/Product/EditProduct'
+import DisplayOrders from './Components/Dashboard components/Product/Orders/DisplayOrders'
+import AddOrders from './Components/Dashboard components/Product/Orders/AddOrders'
+import EditOrder from './Components/Dashboard components/Product/Orders/EditOrder'
+import ViewOrder from './Components/Dashboard components/Product/Orders/ViewOrder'
 
 
 function App() {
@@ -37,6 +41,11 @@ function App() {
               <Route path="/displayProduct" element={<DisplayProduct />} />
               <Route path="/products/add" element={<AddProduct />} />
               <Route path="/products/edit/:id" element={<EditProduct />} />
+              {/* Order Routes */}
+              <Route path="/orders" element={<DisplayOrders />} />
+              <Route path="/orders/add" element={<AddOrders />} />
+              <Route path="/orders/edit/:id" element={<EditOrder />} />
+              <Route path="/orders/view/:id" element={<ViewOrder />} />
               {/* Add more dashboard routes here */}
             </Route>
           </Routes>
