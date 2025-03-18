@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { motion } from 'framer-motion';
 import { FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
 
 const Pricing = () => {
@@ -12,7 +13,12 @@ const Pricing = () => {
             {/* Hero Section */}
             <section className="px-4 sm:px-8 md:px-16 lg:px-24 py-16 md:py-20">
                 <div className="max-w-6xl mx-auto">
-                    <div className="text-center">
+                    <motion.div 
+                        className="text-center"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7 }}
+                    >
                         <h1 className="text-4xl sm:text-5xl font-bold mb-6">
                             Simple, Transparent Pricing
                         </h1>
@@ -35,16 +41,28 @@ const Pricing = () => {
                                 Annual <span className="text-green-500 font-semibold">(Save 20%)</span>
                             </span>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* Pricing Plans */}
             <section className="px-4 sm:px-8 md:px-16 lg:px-24 py-8 md:py-12">
                 <div className="max-w-6xl mx-auto">
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h2 className="text-3xl font-bold mb-4">Our Pricing Plans</h2>
+                        <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            Whether you're a small business or a large enterprise, we have a plan that's right for you.
+                        </p>
+                    </motion.div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Basic Plan */}
-                        <PricingCard 
+                        <PricingCardAnimated 
                             title="Basic"
                             description="Perfect for small businesses just getting started with inventory management."
                             price={annual ? 29 : 39}
@@ -66,11 +84,10 @@ const Pricing = () => {
                             buttonText="Start Free Trial"
                             buttonLink="/signup"
                             darkMode={darkMode}
-                            highlighted={false}
+                            featured={false}
+                            delay={0.1}
                         />
-                        
-                        {/* Professional Plan */}
-                        <PricingCard 
+                        <PricingCardAnimated 
                             title="Professional"
                             description="Ideal for growing businesses with multiple sales channels."
                             price={annual ? 79 : 99}
@@ -93,11 +110,10 @@ const Pricing = () => {
                             buttonText="Start Free Trial"
                             buttonLink="/signup"
                             darkMode={darkMode}
-                            highlighted={true}
+                            featured={true}
+                            delay={0.2}
                         />
-                        
-                        {/* Enterprise Plan */}
-                        <PricingCard 
+                        <PricingCardAnimated 
                             title="Enterprise"
                             description="For large businesses with complex inventory management needs."
                             price={annual ? 199 : 249}
@@ -120,7 +136,8 @@ const Pricing = () => {
                             buttonText="Contact Sales"
                             buttonLink="/contact"
                             darkMode={darkMode}
-                            highlighted={false}
+                            featured={false}
+                            delay={0.3}
                         />
                     </div>
                 </div>
@@ -129,121 +146,141 @@ const Pricing = () => {
             {/* Feature Comparison */}
             <section className={`${darkMode ? 'bg-gray-800' : 'bg-white'} py-16`}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold mb-4">Compare Plan Features</h2>
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h2 className="text-3xl font-bold mb-4">Feature Comparison</h2>
                         <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            A detailed breakdown of what's included in each plan to help you make the right choice.
+                            Compare our plans to find the one that's right for your business.
                         </p>
-                    </div>
+                    </motion.div>
                     
-                    <div className="overflow-x-auto">
-                        <table className={`w-full border-collapse ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <div className={`overflow-x-auto ${darkMode ? 'bg-gray-700' : 'bg-white'} rounded-lg shadow-lg`}>
+                        <table className="min-w-full">
                             <thead>
-                                <tr className={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                    <th className="p-4 text-left">Feature</th>
-                                    <th className="p-4 text-center">Basic</th>
-                                    <th className="p-4 text-center">Professional</th>
-                                    <th className="p-4 text-center">Enterprise</th>
+                                <tr className={`${darkMode ? 'bg-gray-600' : 'bg-gray-100'}`}>
+                                    <th className="py-4 px-6 text-left">Feature</th>
+                                    <th className="py-4 px-6 text-center">Basic</th>
+                                    <th className="py-4 px-6 text-center">Professional</th>
+                                    <th className="py-4 px-6 text-center">Enterprise</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Products" 
                                     basic="1,000" 
                                     pro="10,000" 
                                     enterprise="Unlimited" 
                                     darkMode={darkMode} 
+                                    delay={0.1}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="User Accounts" 
                                     basic="2" 
                                     pro="10" 
                                     enterprise="Unlimited" 
                                     darkMode={darkMode} 
+                                    delay={0.2}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Locations" 
                                     basic="1" 
                                     pro="5" 
                                     enterprise="Unlimited" 
                                     darkMode={darkMode} 
+                                    delay={0.3}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Basic Reporting" 
                                     basic={<FaCheck className="text-green-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={0.4}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Advanced Analytics" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={0.5}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Mobile App Access" 
                                     basic={<FaCheck className="text-green-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={0.6}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Barcode Scanning" 
                                     basic={<FaCheck className="text-green-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={0.7}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Multi-location Support" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={0.8}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Sales Forecasting" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={0.9}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Custom Fields" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaCheck className="text-green-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={1.0}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="API Access" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaTimes className="text-red-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={1.1}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Dedicated Account Manager" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaTimes className="text-red-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={1.2}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Custom Integrations" 
                                     basic={<FaTimes className="text-red-500 mx-auto" />} 
                                     pro={<FaTimes className="text-red-500 mx-auto" />} 
                                     enterprise={<FaCheck className="text-green-500 mx-auto" />} 
                                     darkMode={darkMode} 
+                                    delay={1.3}
                                 />
-                                <FeatureRow 
+                                <TableRowAnimated 
                                     feature="Support" 
                                     basic="Email" 
                                     pro="Email & Chat" 
                                     enterprise="Priority" 
                                     darkMode={darkMode} 
+                                    delay={1.4}
                                 />
                             </tbody>
                         </table>
@@ -254,43 +291,55 @@ const Pricing = () => {
             {/* FAQ Section */}
             <section className="py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-8">
-                    <div className="text-center mb-12">
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
                         <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
                         <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                             Have questions about our pricing? Find answers to common questions below.
                         </p>
-                    </div>
+                    </motion.div>
                     
                     <div className="space-y-6">
-                        <FaqItem 
+                        <FAQItemAnimated 
                             question="Can I switch plans later?" 
                             answer="Yes, you can upgrade or downgrade your plan at any time. When upgrading, you'll be billed the prorated amount for the remainder of your billing cycle. When downgrading, the new rate will apply at the start of your next billing cycle."
                             darkMode={darkMode}
+                            delay={0.1}
                         />
-                        <FaqItem 
+                        <FAQItemAnimated 
                             question="Is there a setup fee?" 
                             answer="No, there are no setup fees for any of our plans. You only pay the advertised monthly or annual subscription fee."
                             darkMode={darkMode}
+                            delay={0.2}
                         />
-                        <FaqItem 
+                        <FAQItemAnimated 
                             question="What payment methods do you accept?" 
                             answer="We accept all major credit cards (Visa, Mastercard, American Express) and PayPal. For Enterprise plans, we can also arrange for bank transfers or other payment methods."
                             darkMode={darkMode}
+                            delay={0.3}
                         />
-                        <FaqItem 
+                        <FAQItemAnimated 
                             question="Do you offer discounts for non-profits?" 
                             answer="Yes, we offer special pricing for non-profit organizations. Please contact our sales team for more information."
                             darkMode={darkMode}
+                            delay={0.4}
                         />
-                        <FaqItem 
+                        <FAQItemAnimated 
                             question="What happens after my free trial?" 
                             answer="After your 14-day free trial, your account will automatically be billed for the plan you selected. You can cancel at any time during the trial period if you decide not to continue."
                             darkMode={darkMode}
+                            delay={0.5}
                         />
-                        <FaqItem 
+                        <FAQItemAnimated 
                             question="Can I get a refund if I'm not satisfied?" 
                             answer="We offer a 30-day money-back guarantee for all new subscriptions. If you're not satisfied with our service within the first 30 days, contact our support team for a full refund."
                             darkMode={darkMode}
+                            delay={0.6}
                         />
                     </div>
                 </div>
@@ -299,24 +348,29 @@ const Pricing = () => {
             {/* CTA Section */}
             <section className="bg-blue-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-8 text-center">
-                    <h2 className="text-3xl font-bold text-white mb-6">Ready to get started?</h2>
-                    <p className="text-xl text-blue-100 mb-8">
-                        Try our inventory management system free for 14 days, no credit card required.
-                    </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4">
-                        <Link 
-                            to="/signup" 
-                            className="px-8 py-3 bg-white text-blue-600 hover:bg-blue-50 font-bold rounded-lg transition-colors duration-300"
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to get started?</h2>
+                        <p className="text-xl text-blue-100 mb-8">
+                            Try our inventory management system free for 14 days, no credit card required.
+                        </p>
+                        <motion.div 
+                            className="inline-block"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            Start Free Trial
-                        </Link>
-                        <Link 
-                            to="/contact" 
-                            className="px-8 py-3 border border-white text-white hover:bg-blue-700 font-bold rounded-lg transition-colors duration-300"
-                        >
-                            Contact Sales
-                        </Link>
-                    </div>
+                            <Link 
+                                to="/signup" 
+                                className="px-8 py-3 bg-white text-blue-600 hover:bg-blue-50 font-bold rounded-lg transition-colors duration-300"
+                            >
+                                Start Free Trial
+                            </Link>
+                        </motion.div>
+                    </motion.div>
                 </div>
             </section>
 
@@ -435,113 +489,147 @@ const Pricing = () => {
     );
 };
 
-// Pricing Card Component
-const PricingCard = ({ title, description, price, period, features, notIncluded, buttonText, buttonLink, darkMode, highlighted }) => {
+// Animated Pricing Card Component
+const PricingCardAnimated = ({ title, description, price, period, features, notIncluded, buttonText, buttonLink, darkMode, featured, delay }) => {
     return (
-        <div className={`rounded-lg overflow-hidden ${
-            highlighted 
-                ? 'ring-2 ring-blue-500 transform scale-105 shadow-xl' 
-                : 'shadow-lg'
-            } ${
-                darkMode 
-                    ? highlighted ? 'bg-gray-700' : 'bg-gray-800' 
-                    : 'bg-white'
-            } transition-all duration-300 flex flex-col h-full`}
+        <motion.div 
+            className={`rounded-lg shadow-lg overflow-hidden ${
+                featured 
+                    ? darkMode 
+                        ? 'bg-blue-900 border-2 border-blue-500' 
+                        : 'bg-white border-2 border-blue-500' 
+                    : darkMode 
+                        ? 'bg-gray-700' 
+                        : 'bg-white'
+            } relative`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay }}
+            whileHover={{ y: -10 }}
         >
-            {highlighted && (
-                <div className="bg-blue-600 text-white text-center py-2 font-semibold">
+            {featured && (
+                <div className="absolute top-0 right-0 bg-blue-500 text-white px-4 py-1 rounded-bl-lg font-semibold text-sm">
                     Most Popular
                 </div>
             )}
-            <div className="p-6 flex-grow">
-                <h3 className="text-2xl font-bold mb-2">{title}</h3>
-                <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>{description}</p>
-                <div className="mb-6">
-                    <span className="text-4xl font-bold">${price}</span>
-                    <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{period}</span>
+            <div className="p-6">
+                <h3 className={`text-2xl font-bold mb-2 ${featured && !darkMode ? 'text-blue-600' : ''}`}>{title}</h3>
+                <div className="mb-4">
+                    <span className="text-4xl font-bold">{price}</span>
+                    <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}> {period}</span>
                 </div>
-                
-                <h4 className="font-semibold mb-3">Includes:</h4>
-                <ul className="space-y-2 mb-6">
+                <p className={`mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{description}</p>
+                <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    <Link 
+                        to={buttonLink} 
+                        className={`block text-center py-2 px-4 rounded-lg font-bold transition-colors duration-300 ${
+                            featured 
+                                ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                                : darkMode 
+                                    ? 'bg-gray-600 hover:bg-gray-500 text-white' 
+                                    : 'bg-blue-100 hover:bg-blue-200 text-blue-800'
+                        }`}
+                    >
+                        {buttonText}
+                    </Link>
+                </motion.div>
+            </div>
+            <div className={`p-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                <h4 className="font-semibold mb-4">Features include:</h4>
+                <ul className="space-y-3">
                     {features.map((feature, index) => (
-                        <li key={index} className="flex items-start">
+                        <motion.li 
+                            key={index} 
+                            className="flex items-start"
+                            initial={{ opacity: 0, x: -10 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.3, delay: delay + (index * 0.1) }}
+                        >
                             <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                            <span>{feature}</span>
-                        </li>
+                            <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{feature}</span>
+                        </motion.li>
                     ))}
                 </ul>
-                
                 {notIncluded.length > 0 && (
                     <>
                         <h4 className={`font-semibold mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Not included:</h4>
-                        <ul className={`space-y-2 mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <ul className={`space-y-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             {notIncluded.map((feature, index) => (
-                                <li key={index} className="flex items-start">
+                                <motion.li 
+                                    key={index} 
+                                    className="flex items-start"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.3, delay: delay + (index * 0.1) }}
+                                >
                                     <FaTimes className="text-red-500 mt-1 mr-2 flex-shrink-0" />
-                                    <span>{feature}</span>
-                                </li>
+                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>{feature}</span>
+                                </motion.li>
                             ))}
                         </ul>
                     </>
                 )}
             </div>
-            
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                <Link 
-                    to={buttonLink} 
-                    className={`w-full block text-center py-3 px-4 rounded-lg font-medium transition-colors duration-300 ${
-                        highlighted 
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                            : darkMode 
-                                ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                                : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                    }`}
-                >
-                    {buttonText}
-                </Link>
-            </div>
-        </div>
+        </motion.div>
     );
 };
 
-// Feature Row Component
-const FeatureRow = ({ feature, basic, pro, enterprise, darkMode }) => {
+// Animated Table Row Component
+const TableRowAnimated = ({ feature, basic, pro, enterprise, darkMode, delay }) => {
     return (
-        <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <td className="p-4">{feature}</td>
-            <td className="p-4 text-center">{basic}</td>
-            <td className="p-4 text-center">{pro}</td>
-            <td className="p-4 text-center">{enterprise}</td>
-        </tr>
+        <motion.tr 
+            className={`${darkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'}`}
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay }}
+        >
+            <td className="py-4 px-6">{feature}</td>
+            <td className="py-4 px-6 text-center">
+                {basic ? (
+                    <FaCheck className="text-green-500 mx-auto" />
+                ) : (
+                    <FaTimes className="text-red-500 mx-auto" />
+                )}
+            </td>
+            <td className="py-4 px-6 text-center">
+                {pro ? (
+                    <FaCheck className="text-green-500 mx-auto" />
+                ) : (
+                    <FaTimes className="text-red-500 mx-auto" />
+                )}
+            </td>
+            <td className="py-4 px-6 text-center">
+                {enterprise ? (
+                    <FaCheck className="text-green-500 mx-auto" />
+                ) : (
+                    <FaTimes className="text-red-500 mx-auto" />
+                )}
+            </td>
+        </motion.tr>
     );
 };
 
-// FAQ Item Component
-const FaqItem = ({ question, answer, darkMode }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
+// Animated FAQ Item Component
+const FAQItemAnimated = ({ question, answer, darkMode, delay }) => {
     return (
-        <div className={`border rounded-lg overflow-hidden ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
-            <button 
-                className={`w-full text-left p-4 flex justify-between items-center focus:outline-none ${isOpen ? 'border-b' : ''} ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <span className="font-semibold">{question}</span>
-                <svg 
-                    className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'transform rotate-180' : ''}`} 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            {isOpen && (
-                <div className="p-4">
-                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{answer}</p>
-                </div>
-            )}
-        </div>
+        <motion.div 
+            className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay }}
+            whileHover={{ scale: 1.01 }}
+        >
+            <h3 className="text-xl font-semibold mb-3">{question}</h3>
+            <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{answer}</p>
+        </motion.div>
     );
 };
 

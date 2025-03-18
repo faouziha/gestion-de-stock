@@ -11,7 +11,8 @@ export default function AddOrders() {
     nom_produit: '',
     quantite: '',
     date_commande: new Date().toISOString().split('T')[0], // Initialize with current date
-    customer_name: '' // Add customer name field
+    customer_name: '', // Add customer name field
+    status: 'Pending' // Default status
   })
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
@@ -20,6 +21,9 @@ export default function AddOrders() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { darkMode } = useTheme()
+
+  // State for available stock
+  const [availableStock, setAvailableStock] = useState(null);
 
   // Fetch products for dropdown selection
   useEffect(() => {
@@ -36,6 +40,41 @@ export default function AddOrders() {
     fetchProducts()
   }, [user.id])
 
+  // Function to check available stock for a product
+  const checkAvailableStock = async (productId) => {
+    if (!productId) return;
+    
+    try {
+      // Get the product details
+      const product = products.find(p => p.id === parseInt(productId));
+      if (!product) return;
+      
+      // Get all orders for this product to calculate what's already ordered
+      const ordersResponse = await axios.get(`http://localhost:3000/commande?userId=${user.id}`);
+      const orders = ordersResponse.data;
+      
+      // Calculate total ordered quantity for this product
+      const orderedQuantity = orders
+        .filter(order => order.produit_id === parseInt(productId))
+        .reduce((total, order) => total + parseInt(order.quantite), 0);
+      
+      // Calculate available stock
+      const totalStock = parseInt(product.total);
+      const available = Math.max(0, totalStock - orderedQuantity);
+      
+      setAvailableStock({
+        totalStock,
+        orderedQuantity,
+        available
+      });
+      
+      return available;
+    } catch (error) {
+      console.error('Error checking available stock:', error);
+      return null;
+    }
+  };
+
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -51,6 +90,9 @@ export default function AddOrders() {
         // Reset quantity when product changes
         quantite: ''
       })
+      
+      // Check available stock for the selected product
+      checkAvailableStock(value);
     } else {
       setFormData({
         ...formData,
@@ -75,8 +117,8 @@ export default function AddOrders() {
     }
 
     // Check if quantity exceeds available stock
-    if (selectedProduct && parseInt(formData.quantite) > selectedProduct.total) {
-      setError(`Quantity exceeds available stock (${selectedProduct.total} available)`)
+    if (availableStock && parseInt(formData.quantite) > availableStock.available) {
+      setError(`Quantity exceeds available stock (${availableStock.available} available)`)
       return
     }
     
@@ -172,6 +214,16 @@ export default function AddOrders() {
                 Available stock: {selectedProduct.total} units
               </p>
             )}
+            {availableStock && (
+              <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Ordered quantity: {availableStock.orderedQuantity} units
+              </p>
+            )}
+            {availableStock && (
+              <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Available stock: {availableStock.available} units
+              </p>
+            )}
           </div>
           
           <div className="mb-6">
@@ -185,7 +237,7 @@ export default function AddOrders() {
               value={formData.quantite}
               onChange={handleChange}
               min="1"
-              max={selectedProduct ? selectedProduct.total : 1}
+              max={availableStock ? availableStock.available : 1}
               className={`block w-full px-4 py-2 border ${darkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
               required
               disabled={!selectedProduct}
@@ -206,9 +258,31 @@ export default function AddOrders() {
                 name="date_commande"
                 value={formData.date_commande}
                 onChange={handleChange}
-                className={`block w-full pl-10 px-4 py-2 border ${darkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                className={`block w-full pl-10 pr-4 py-2 border ${darkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
               />
             </div>
+          </div>
+          
+          <div className="mb-6">
+            <label htmlFor="status" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+              Order Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className={`block w-full px-4 py-2 border ${darkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+            >
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Set the current status of this order
+            </p>
           </div>
           
           <div className="mb-6">

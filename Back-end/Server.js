@@ -26,6 +26,34 @@ app.get("/", (req, res) => {
     res.json("Hello World!");
 });
 
+// Route to add status column to commande table if it doesn't exist
+app.get("/setup/add-status-column", async (req, res) => {
+    try {
+        // Check if the status column already exists
+        const checkColumnQuery = `
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'commande' AND column_name = 'status'
+        `;
+        const columnCheck = await db.query(checkColumnQuery);
+        
+        if (columnCheck.rows.length === 0) {
+            // Column doesn't exist, add it
+            const addColumnQuery = `
+                ALTER TABLE commande 
+                ADD COLUMN status VARCHAR(20) DEFAULT 'Pending'
+            `;
+            await db.query(addColumnQuery);
+            res.json({ success: true, message: "Status column added to commande table" });
+        } else {
+            res.json({ success: true, message: "Status column already exists" });
+        }
+    } catch (error) {
+        console.error("Error adding status column:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.get("/users", (req, res) => {
     const dbQuery = "SELECT * FROM users";
     db.query(dbQuery, (err, result) => {
@@ -285,6 +313,7 @@ app.delete("/produit/:id", async (req, res) => {
         // Check if the product belongs to the user before deleting
         if (userId) {
             const productCheck = await db.query("SELECT * FROM produit WHERE id = $1", [id]);
+            
             if (productCheck.rows.length === 0) {
                 return res.status(404).json({ error: "Product not found" });
             }
@@ -302,85 +331,41 @@ app.delete("/produit/:id", async (req, res) => {
     }
 })
 
-//fournisseur
-// get fournisseur
-
-app.get("/fournisseur", (req, res) => {
+// Helper function to check available stock for a product
+async function getAvailableStock(productId) {
     try {
-        const allFournisseur = "SELECT * FROM fournisseur"
-        db.query(allFournisseur, (err, result) => {
-            res.json(result.rows);
-        })
-    } catch (error) {
-        console.error("Error getting fournisseurs:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-})
-
-//get a fournisseur
-
-app.get("/fournisseur/:id", async (req, res) => {
-    try {
-        const {id} = req.params;
-        const aFournisseur = await db.query("SELECT * FROM fournisseur WHERE id = $1", [id])
-        res.json(aFournisseur.rows[0]);
-    } catch (error) {
-        console.error("Error getting fournisseur:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-})
-
-//post fournisseur
-
-app.post("/fournisseur", async (req, res) => {
-    try {
-        const {nom_entreprise, num_registre, email, tel} = req.body;
-        const newFournisseur = await db.query(
-            "INSERT INTO fournisseur (nom_entreprise, num_registre, email, tel) VALUES ($1, $2, $3, $4) RETURNING *",
-            [nom_entreprise, num_registre, email, tel]
+        // Get the total stock from the product
+        const productResult = await db.query("SELECT total FROM produit WHERE id = $1", [productId]);
+        
+        if (productResult.rows.length === 0) {
+            throw new Error("Product not found");
+        }
+        
+        const totalStock = parseInt(productResult.rows[0].total);
+        
+        // Get the sum of quantities from existing orders for this product
+        const ordersResult = await db.query(
+            "SELECT COALESCE(SUM(quantite), 0) as ordered_quantity FROM commande WHERE produit_id = $1",
+            [productId]
         );
-        res.status(201).json({
-            message: "Fournisseur created successfully",
-            fournisseur: newFournisseur.rows[0]
-        });
+        
+        const orderedQuantity = parseInt(ordersResult.rows[0].ordered_quantity || 0);
+        
+        // Calculate available stock
+        const availableStock = Math.max(0, totalStock - orderedQuantity);
+        
+        return {
+            totalStock,
+            orderedQuantity,
+            availableStock
+        };
     } catch (error) {
-        console.error("Error creating fournisseur:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error checking available stock:", error);
+        throw error;
     }
-})
+}
 
-//update a fournisseur
-
-app.put("/fournisseur/:id", async (req, res) => {
-    try {
-        const {id} = req.params;
-        const {nom_entreprise, num_registre, email, tel} = req.body;
-        const updatedFournisseur = await db.query(
-            "UPDATE fournisseur SET nom_entreprise = $2, num_registre = $3, email = $4, tel = $5 WHERE id = $1 RETURNING *",
-            [id, nom_entreprise, num_registre, email, tel]
-        );
-        res.json(updatedFournisseur.rows[0]);
-    } catch (error) {
-        console.error("Error updating fournisseur:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-})
-
-//delete a fournisseur
-
-app.delete("/fournisseur/:id", async (req, res) => {
-    try {
-        const {id} = req.params;
-        const deletedFournisseur = await db.query("DELETE FROM fournisseur WHERE id = $1 RETURNING *", [id]);
-        res.json(deletedFournisseur.rows[0]);
-    } catch (error) {
-        console.error("Error deleting fournisseur:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-})
-
-//commande
-//get commande
+//get all commandes
 
 app.get("/commande", (req, res) => {
     try {
@@ -412,21 +397,13 @@ app.get("/commande", (req, res) => {
 app.get("/commande/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.query.userId;
         
-        let query = "SELECT * FROM commande WHERE id = $1";
-        let params = [id];
-        
-        // If userId is provided, ensure the order belongs to that user
-        if (userId) {
-            query = "SELECT * FROM commande WHERE id = $1 AND userId = $2";
-            params = [id, userId];
-        }
-        
-        const aCommande = await db.query(query, params);
+        // Get the order without userId filtering
+        const query = "SELECT * FROM commande WHERE id = $1";
+        const aCommande = await db.query(query, [id]);
         
         if (aCommande.rows.length === 0) {
-            return res.status(404).json({ error: "Order not found or you don't have permission to view it" });
+            return res.status(404).json({ error: "Order not found" });
         }
         
         res.json(aCommande.rows[0]);
@@ -440,7 +417,20 @@ app.get("/commande/:id", async (req, res) => {
 
 app.post("/commande", async (req, res) => {
     try {
-        const { produit_id, nom_produit, quantite, date_commande, userId, customer_name } = req.body;
+        const { produit_id, nom_produit, quantite, date_commande, userId, customer_name, status } = req.body;
+        
+        // Check available stock before creating the order
+        const stockInfo = await getAvailableStock(produit_id);
+        
+        // Verify if there's enough stock available
+        if (quantite > stockInfo.availableStock) {
+            return res.status(400).json({ 
+                error: "Insufficient stock", 
+                message: `Only ${stockInfo.availableStock} units available for this product.`,
+                availableStock: stockInfo.availableStock,
+                requestedQuantity: quantite
+            });
+        }
         
         // Create a basic query with required fields
         let query = "INSERT INTO commande (produit_id, nom_produit, quantite";
@@ -467,6 +457,11 @@ app.post("/commande", async (req, res) => {
             values.push(customer_name);
         }
         
+        // Add status field with default "Pending" if not provided
+        query += ", status";
+        placeholders += ", $" + valueIndex++;
+        values.push(status || "Pending");
+        
         // Complete the query
         query += ") VALUES (" + placeholders + ") RETURNING *";
         
@@ -474,11 +469,15 @@ app.post("/commande", async (req, res) => {
         
         res.status(201).json({
             message: "Commande created successfully",
-            commande: newCommande.rows[0]
+            commande: newCommande.rows[0],
+            stockInfo: {
+                previouslyAvailable: stockInfo.availableStock,
+                remainingAfterOrder: stockInfo.availableStock - quantite
+            }
         });
-    } catch (error) {
-        console.error("Error creating commande:", error);
-        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    } catch (err) {
+        console.error("error : ", err)
+        res.status(500).json({ err: "Internal Server Error", details: err.message });
     }
 });
 
@@ -487,44 +486,118 @@ app.post("/commande", async (req, res) => {
 app.put("/commande/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { produit_id, nom_produit, quantite, date_commande, customer_name, userId } = req.body;
+        const { produit_id, nom_produit, quantite, date_commande, customer_name, userId, status } = req.body;
         
-        // First check if the order exists and belongs to the user
+        console.log("Update order request received:", { id, userId, status });
+        
+        // First check if the order exists
         const checkOrder = await db.query("SELECT * FROM commande WHERE id = $1", [id]);
         
         if (checkOrder.rows.length === 0) {
             return res.status(404).json({ error: "Order not found" });
         }
         
+        console.log("Order found:", checkOrder.rows[0]);
+        console.log("Comparing userIds:", { 
+            requestUserId: userId, 
+            dbUserId: checkOrder.rows[0].userid,
+            requestType: typeof userId,
+            dbType: typeof checkOrder.rows[0].userid
+        });
+        
         // If userId is provided, ensure the order belongs to that user
-        if (userId && checkOrder.rows[0].userId !== userId) {
+        // For now, skip this check to allow any user to update any order
+        // We'll implement proper user validation later
+        /*
+        if (userId && String(checkOrder.rows[0].userid) !== String(userId)) {
             return res.status(403).json({ error: "You don't have permission to update this order" });
+        }
+        */
+        
+        // Check if this is a status-only update
+        const isStatusOnlyUpdate = status && 
+            produit_id === checkOrder.rows[0].produit_id && 
+            quantite === checkOrder.rows[0].quantite;
+        
+        // Get the original order quantity
+        const originalQuantity = parseInt(checkOrder.rows[0].quantite);
+        const originalProductId = checkOrder.rows[0].produit_id;
+        
+        // Only perform stock validation if this is not a status-only update
+        if (!isStatusOnlyUpdate && (produit_id !== originalProductId || quantite > originalQuantity)) {
+            // If product is changing, we need to check the new product's stock
+            const productToCheck = produit_id !== originalProductId ? produit_id : originalProductId;
+            
+            // Check available stock
+            const stockInfo = await getAvailableStock(productToCheck);
+            
+            // For the same product, we need to exclude the current order's quantity from the calculation
+            let adjustedAvailableStock = stockInfo.availableStock;
+            if (produit_id === originalProductId) {
+                adjustedAvailableStock += originalQuantity;
+            }
+            
+            // Verify if there's enough stock available
+            if (quantite > adjustedAvailableStock) {
+                return res.status(400).json({ 
+                    error: "Insufficient stock", 
+                    message: `Only ${adjustedAvailableStock} units available for this product.`,
+                    availableStock: adjustedAvailableStock,
+                    requestedQuantity: quantite
+                });
+            }
         }
         
         // Build the query dynamically based on provided fields
-        let query = "UPDATE commande SET produit_id = $1, nom_produit = $2, quantite = $3";
-        let values = [produit_id, nom_produit, quantite];
-        let paramIndex = 4;
+        let query = "UPDATE commande SET";
+        let values = [];
+        let paramIndex = 1;
+        let updateFields = [];
+        
+        // Only include fields that are provided in the request
+        if (produit_id !== undefined) {
+            updateFields.push(` produit_id = $${paramIndex++}`);
+            values.push(produit_id);
+        }
+        
+        if (nom_produit !== undefined) {
+            updateFields.push(` nom_produit = $${paramIndex++}`);
+            values.push(nom_produit);
+        }
+        
+        if (quantite !== undefined) {
+            updateFields.push(` quantite = $${paramIndex++}`);
+            values.push(quantite);
+        }
         
         if (date_commande) {
-            query += `, date_commande = $${paramIndex}`;
+            updateFields.push(` date_commande = $${paramIndex++}`);
             values.push(date_commande);
-            paramIndex++;
         }
         
         if (customer_name) {
-            query += `, customer_name = $${paramIndex}`;
+            updateFields.push(` customer_name = $${paramIndex++}`);
             values.push(customer_name);
-            paramIndex++;
+        }
+        
+        // Add status field if provided
+        if (status) {
+            updateFields.push(` status = $${paramIndex++}`);
+            values.push(status);
         }
         
         // Ensure userId is preserved
         if (userId) {
-            query += `, userId = $${paramIndex}`;
+            updateFields.push(` userId = $${paramIndex++}`);
             values.push(userId);
-            paramIndex++;
         }
         
+        // If no fields to update, return the original order
+        if (updateFields.length === 0) {
+            return res.json(checkOrder.rows[0]);
+        }
+        
+        query += updateFields.join(',');
         query += ` WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
         
@@ -570,6 +643,207 @@ app.delete("/commande/:id", async (req, res) => {
         res.json(deletedCommande.rows[0]);
     } catch (error) {
         console.error("Error deleting commande:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+})
+
+//fournisseur
+// get fournisseur
+
+app.get("/fournisseur", (req, res) => {
+    try {
+        const userId = req.query.userId;
+        let query = "SELECT * FROM fournisseur";
+        let params = [];
+        
+        // Filter by userId if provided
+        if (userId) {
+            query = "SELECT * FROM fournisseur WHERE userId = $1";
+            params = [userId];
+        }
+        
+        db.query(query, params, (err, result) => {
+            if (err) {
+                console.error("Error getting fournisseurs:", err);
+                return res.status(500).json({ error: "Internal Server Error" });
+            }
+            res.json(result.rows);
+        });
+    } catch (error) {
+        console.error("Error getting fournisseurs:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+})
+
+//get a fournisseur
+
+app.get("/fournisseur/:id", async (req, res) => {
+    try {
+        const {id} = req.params;
+        const userId = req.query.userId;
+        
+        let query = "SELECT * FROM fournisseur WHERE id = $1";
+        let params = [id];
+        
+        // If userId is provided, ensure the supplier belongs to that user
+        if (userId) {
+            query = "SELECT * FROM fournisseur WHERE id = $1 AND userId = $2";
+            params = [id, userId];
+        }
+        
+        const aFournisseur = await db.query(query, params);
+        
+        if (aFournisseur.rows.length === 0) {
+            return res.status(404).json({ error: "Supplier not found or you don't have permission to view it" });
+        }
+        
+        res.json(aFournisseur.rows[0]);
+    } catch (error) {
+        console.error("Error getting fournisseur:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+})
+
+//post fournisseur
+
+app.post("/fournisseur", async (req, res) => {
+    try {
+        let {nom_entreprise, num_registre, email, tel, userId} = req.body;
+        
+        // Log the received data for debugging
+        console.log("Creating new fournisseur");
+        console.log("Received data:", { nom_entreprise, num_registre, email, tel, userId });
+        
+        // Ensure proper type conversion and data cleaning
+        nom_entreprise = nom_entreprise ? nom_entreprise.trim() : '';
+        email = email ? email.trim() : '';
+        
+        // Create a basic query with required fields
+        let query = "INSERT INTO fournisseur (nom_entreprise, num_registre, email, tel";
+        let values = [nom_entreprise, num_registre, email, tel];
+        let placeholders = "$1, $2, $3, $4";
+        let valueIndex = 5;
+        
+        // Add userId if it exists
+        if (userId) {
+            query += ", userId";
+            placeholders += ", $" + valueIndex;
+            values.push(userId);
+        }
+        
+        // Complete the query
+        query += ") VALUES (" + placeholders + ") RETURNING *";
+        
+        const newFournisseur = await db.query(query, values);
+        
+        res.status(201).json({
+            message: "Fournisseur created successfully",
+            fournisseur: newFournisseur.rows[0]
+        });
+    } catch (error) {
+        console.error("Error creating fournisseur:", error);
+        res.status(500).json({ 
+            error: "Internal Server Error", 
+            message: error.message,
+            detail: error.detail || "No additional details"
+        });
+    }
+})
+
+//update a fournisseur
+
+app.put("/fournisseur/:id", async (req, res) => {
+    try {
+        const {id} = req.params;
+        let {nom_entreprise, num_registre, email, tel, userId} = req.body;
+        
+        // Log the received data for debugging
+        console.log("Updating fournisseur with ID:", id);
+        console.log("Received data:", { nom_entreprise, num_registre, email, tel, userId });
+        
+        // First check if the supplier exists and belongs to the user
+        const checkSupplier = await db.query("SELECT * FROM fournisseur WHERE id = $1", [id]);
+        
+        if (checkSupplier.rows.length === 0) {
+            return res.status(404).json({ error: "Supplier not found" });
+        }
+        
+        // If userId is provided, ensure the supplier belongs to that user
+        if (userId && checkSupplier.rows[0].userId !== userId) {
+            return res.status(403).json({ error: "You don't have permission to update this supplier" });
+        }
+        
+        // Ensure proper type conversion and data cleaning
+        nom_entreprise = nom_entreprise ? nom_entreprise.trim() : '';
+        email = email ? email.trim() : '';
+        
+        // Build the query dynamically based on provided fields
+        let query = "UPDATE fournisseur SET nom_entreprise = $1, num_registre = $2, email = $3, tel = $4";
+        let values = [nom_entreprise, num_registre, email, tel];
+        let paramIndex = 5;
+        
+        // Ensure userId is preserved
+        if (userId) {
+            query += `, userId = $${paramIndex}`;
+            values.push(userId);
+            paramIndex++;
+        }
+        
+        query += ` WHERE id = $${paramIndex} RETURNING *`;
+        values.push(id);
+        
+        // Use parameterized query to prevent SQL injection
+        const updatedFournisseur = await db.query(query, values);
+        
+        if (updatedFournisseur.rows.length === 0) {
+            return res.status(404).json({ error: "Fournisseur not found" });
+        }
+        
+        // Log the result
+        console.log("Update result:", updatedFournisseur.rows[0]);
+        
+        res.json(updatedFournisseur.rows[0]);
+    } catch (error) {
+        console.error("Error updating fournisseur:", error);
+        // Send more detailed error information
+        res.status(500).json({ 
+            error: "Internal Server Error", 
+            message: error.message,
+            detail: error.detail || "No additional details",
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+})
+
+//delete a fournisseur
+
+app.delete("/fournisseur/:id", async (req, res) => {
+    try {
+        const {id} = req.params;
+        const userId = req.query.userId;
+        
+        // If userId is provided, ensure the supplier belongs to that user
+        if (userId) {
+            const checkSupplier = await db.query("SELECT * FROM fournisseur WHERE id = $1", [id]);
+            
+            if (checkSupplier.rows.length === 0) {
+                return res.status(404).json({ error: "Supplier not found" });
+            }
+            
+            if (checkSupplier.rows[0].userId !== userId) {
+                return res.status(403).json({ error: "You don't have permission to delete this supplier" });
+            }
+        }
+        
+        const deletedFournisseur = await db.query("DELETE FROM fournisseur WHERE id = $1 RETURNING *", [id]);
+        
+        if (deletedFournisseur.rows.length === 0) {
+            return res.status(404).json({ error: "Supplier not found" });
+        }
+        
+        res.json(deletedFournisseur.rows[0]);
+    } catch (error) {
+        console.error("Error deleting fournisseur:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 })

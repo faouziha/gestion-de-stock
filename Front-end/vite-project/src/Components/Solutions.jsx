@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { motion } from 'framer-motion';
 import { 
     FaStore, 
     FaWarehouse, 
@@ -22,7 +23,12 @@ const Solutions = () => {
             {/* Hero Section */}
             <section className="px-4 sm:px-8 md:px-16 lg:px-24 py-16 md:py-20">
                 <div className="max-w-6xl mx-auto">
-                    <div className="text-center">
+                    <motion.div 
+                        className="text-center"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7 }}
+                    >
                         <h1 className="text-4xl sm:text-5xl font-bold mb-6">
                             Inventory Solutions for Every Industry
                         </h1>
@@ -30,22 +36,28 @@ const Solutions = () => {
                             Our inventory management system adapts to your specific industry needs, 
                             providing tailored solutions to optimize your operations.
                         </p>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* Industry Solutions Section */}
             <section className={`${darkMode ? 'bg-gray-800' : 'bg-white'} py-16`}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-8">
-                    <div className="text-center mb-12">
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
                         <h2 className="text-3xl font-bold mb-4">Industry-Specific Solutions</h2>
                         <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                             Discover how our inventory management system can be customized for your industry's unique requirements.
                         </p>
-                    </div>
+                    </motion.div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <IndustrySolutionCard 
+                        <IndustrySolutionCardAnimated 
                             icon={<FaStore className="text-blue-500" size={28} />}
                             title="Retail"
                             description="Manage multi-channel inventory, track sales trends, and optimize stock levels across physical and online stores."
@@ -56,8 +68,9 @@ const Solutions = () => {
                                 "Customer purchase history"
                             ]}
                             darkMode={darkMode}
+                            delay={0.1}
                         />
-                        <IndustrySolutionCard 
+                        <IndustrySolutionCardAnimated 
                             icon={<FaWarehouse className="text-blue-500" size={28} />}
                             title="Wholesale & Distribution"
                             description="Streamline your distribution operations with bulk order management and efficient warehouse organization."
@@ -68,8 +81,9 @@ const Solutions = () => {
                                 "Volume-based pricing"
                             ]}
                             darkMode={darkMode}
+                            delay={0.2}
                         />
-                        <IndustrySolutionCard 
+                        <IndustrySolutionCardAnimated 
                             icon={<FaIndustry className="text-blue-500" size={28} />}
                             title="Manufacturing"
                             description="Track raw materials, manage production processes, and monitor finished goods inventory."
@@ -80,8 +94,9 @@ const Solutions = () => {
                                 "Raw material forecasting"
                             ]}
                             darkMode={darkMode}
+                            delay={0.3}
                         />
-                        <IndustrySolutionCard 
+                        <IndustrySolutionCardAnimated 
                             icon={<FaShoppingBag className="text-blue-500" size={28} />}
                             title="E-commerce"
                             description="Synchronize inventory across multiple online sales channels and automate order fulfillment."
@@ -92,8 +107,9 @@ const Solutions = () => {
                                 "Shipping label generation"
                             ]}
                             darkMode={darkMode}
+                            delay={0.4}
                         />
-                        <IndustrySolutionCard 
+                        <IndustrySolutionCardAnimated 
                             icon={<FaUtensils className="text-blue-500" size={28} />}
                             title="Food & Beverage"
                             description="Manage perishable inventory with expiration date tracking and FIFO (First In, First Out) management."
@@ -104,8 +120,9 @@ const Solutions = () => {
                                 "Temperature monitoring integration"
                             ]}
                             darkMode={darkMode}
+                            delay={0.5}
                         />
-                        <IndustrySolutionCard 
+                        <IndustrySolutionCardAnimated 
                             icon={<FaHospital className="text-blue-500" size={28} />}
                             title="Healthcare"
                             description="Ensure compliance with regulatory requirements while managing medical supplies and equipment."
@@ -116,6 +133,7 @@ const Solutions = () => {
                                 "Controlled substance tracking"
                             ]}
                             darkMode={darkMode}
+                            delay={0.6}
                         />
                     </div>
                 </div>
@@ -124,15 +142,21 @@ const Solutions = () => {
             {/* Business Size Solutions */}
             <section className={`${darkMode ? 'bg-gray-900' : 'bg-gray-50'} py-16`}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-8">
-                    <div className="text-center mb-12">
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
                         <h2 className="text-3xl font-bold mb-4">Solutions for Every Business Size</h2>
                         <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                             Whether you're a small business or a large enterprise, our system scales to meet your needs.
                         </p>
-                    </div>
+                    </motion.div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <BusinessSizeCard 
+                        <BusinessSizeCardAnimated 
                             icon={<FaStore className="text-blue-500" size={28} />}
                             title="Small Business"
                             description="Affordable inventory management with essential features to help small businesses grow efficiently."
@@ -143,8 +167,9 @@ const Solutions = () => {
                                 "Simple reporting",
                                 "Cost-effective pricing"
                             ]}
+                            delay={0.1}
                         />
-                        <BusinessSizeCard 
+                        <BusinessSizeCardAnimated 
                             icon={<FaUsers className="text-blue-500" size={28} />}
                             title="Mid-Market"
                             description="Advanced features for growing businesses with multiple locations or sales channels."
@@ -155,8 +180,9 @@ const Solutions = () => {
                                 "Integration capabilities",
                                 "Team collaboration tools"
                             ]}
+                            delay={0.3}
                         />
-                        <BusinessSizeCard 
+                        <BusinessSizeCardAnimated 
                             icon={<FaIndustry className="text-blue-500" size={28} />}
                             title="Enterprise"
                             description="Comprehensive solutions for large organizations with complex inventory needs."
@@ -167,6 +193,7 @@ const Solutions = () => {
                                 "API access",
                                 "Dedicated support team"
                             ]}
+                            delay={0.5}
                         />
                     </div>
                 </div>
@@ -175,41 +202,51 @@ const Solutions = () => {
             {/* Case Studies */}
             <section className={`${darkMode ? 'bg-gray-800' : 'bg-white'} py-16`}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-8">
-                    <div className="text-center mb-12">
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
                         <h2 className="text-3xl font-bold mb-4">Success Stories</h2>
                         <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                             See how businesses like yours have transformed their operations with our inventory management system.
                         </p>
-                    </div>
+                    </motion.div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <CaseStudyCard 
+                        <CaseStudyCardAnimated
                             industry="Retail"
-                            company="Global Fashion Outlet"
-                            result="Reduced stockouts by 75% and improved inventory turnover by 35%"
-                            quote="This system has completely transformed how we manage our multi-store inventory. We now have real-time visibility across all locations."
+                            company="Fashion Boutique Chain"
+                            result="45% reduction in stockouts"
+                            quote="We've been able to optimize our inventory across 12 locations and significantly improve our customer satisfaction."
                             darkMode={darkMode}
+                            delay={0.1}
                         />
-                        <CaseStudyCard 
+                        <CaseStudyCardAnimated
                             industry="Manufacturing"
-                            company="Precision Parts Inc."
-                            result="Cut production delays by 60% and reduced excess inventory by 40%"
-                            quote="The ability to track raw materials and production schedules in one system has streamlined our entire manufacturing process."
+                            company="Furniture Manufacturer"
+                            result="30% decrease in raw material costs"
+                            quote="The ability to track materials through the production process has eliminated waste and improved our margins."
                             darkMode={darkMode}
+                            delay={0.3}
                         />
-                        <CaseStudyCard 
+                        <CaseStudyCardAnimated
                             industry="E-commerce"
-                            company="Trendy Home Goods"
-                            result="Increased order accuracy to 99.8% and reduced fulfillment time by 50%"
-                            quote="Managing inventory across multiple sales channels used to be a nightmare. Now it's all synchronized automatically."
+                            company="Online Electronics Store"
+                            result="60% faster order fulfillment"
+                            quote="Integrating with our online platforms has streamlined our entire operation and allowed us to scale rapidly."
                             darkMode={darkMode}
+                            delay={0.5}
                         />
-                        <CaseStudyCard 
-                            industry="Food Distribution"
-                            company="Fresh Foods Distributors"
-                            result="Reduced food waste by 65% with improved expiration date tracking"
-                            quote="The expiration date tracking feature has been a game-changer for our perishable inventory management."
+                        <CaseStudyCardAnimated
+                            industry="Food & Beverage"
+                            company="Restaurant Supply Company"
+                            result="90% reduction in expired inventory"
+                            quote="The expiration date tracking feature alone has saved us thousands in wasted inventory."
                             darkMode={darkMode}
+                            delay={0.7}
                         />
                     </div>
                 </div>
@@ -218,37 +255,47 @@ const Solutions = () => {
             {/* Implementation Process */}
             <section className={`${darkMode ? 'bg-gray-900' : 'bg-gray-50'} py-16`}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold mb-4">Our Implementation Process</h2>
+                    <motion.div 
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h2 className="text-3xl font-bold mb-4">Implementation Process</h2>
                         <p className={`max-w-2xl mx-auto ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            We ensure a smooth transition to our inventory management system with our proven implementation process.
+                            Our streamlined implementation process ensures a smooth transition to your new inventory management system.
                         </p>
-                    </div>
+                    </motion.div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <ProcessCard 
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <ProcessCardAnimated
                             number="1"
                             title="Consultation"
-                            description="We analyze your current processes and identify your specific inventory management needs."
+                            description="We analyze your business needs and recommend the right solution."
                             darkMode={darkMode}
+                            delay={0.1}
                         />
-                        <ProcessCard 
+                        <ProcessCardAnimated
                             number="2"
-                            title="Customization"
-                            description="We configure the system to match your business requirements and industry-specific needs."
+                            title="Setup"
+                            description="Our team configures the system to match your specific requirements."
                             darkMode={darkMode}
+                            delay={0.3}
                         />
-                        <ProcessCard 
+                        <ProcessCardAnimated
                             number="3"
                             title="Training"
-                            description="We provide comprehensive training for your team to ensure they can use the system effectively."
+                            description="Comprehensive training for your team to ensure smooth adoption."
                             darkMode={darkMode}
+                            delay={0.5}
                         />
-                        <ProcessCard 
+                        <ProcessCardAnimated
                             number="4"
                             title="Support"
-                            description="Our dedicated support team is available to help you maximize the value of your inventory system."
+                            description="Ongoing support and optimization to maximize your ROI."
                             darkMode={darkMode}
+                            delay={0.7}
                         />
                     </div>
                 </div>
@@ -257,95 +304,141 @@ const Solutions = () => {
             {/* CTA Section */}
             <section className="bg-blue-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-8 text-center">
-                    <h2 className="text-3xl font-bold text-white mb-6">Find the right solution for your business</h2>
-                    <p className="text-xl text-blue-100 mb-8">
-                        Contact our solutions team to discuss your specific inventory management needs.
-                    </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4">
-                        <Link 
-                            to="/contact" 
-                            className="px-8 py-3 bg-white text-blue-600 hover:bg-blue-50 font-bold rounded-lg transition-colors duration-300"
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to find your solution?</h2>
+                        <p className="text-xl text-blue-100 mb-8">
+                            Contact us today to discuss how our inventory management system can be tailored to your industry.
+                        </p>
+                        <motion.div 
+                            className="inline-block"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            Schedule a Consultation
-                        </Link>
-                        <Link 
-                            to="/pricing" 
-                            className="px-8 py-3 border border-white text-white hover:bg-blue-700 font-bold rounded-lg transition-colors duration-300"
-                        >
-                            View Pricing Plans
-                        </Link>
-                    </div>
+                            <Link 
+                                to="/Contact" 
+                                className="px-8 py-3 bg-white text-blue-600 hover:bg-blue-50 font-bold rounded-lg transition-colors duration-300"
+                            >
+                                Contact Us
+                            </Link>
+                        </motion.div>
+                    </motion.div>
                 </div>
             </section>
         </div>
     );
 };
 
-// Industry Solution Card Component
-const IndustrySolutionCard = ({ icon, title, description, features, darkMode }) => {
+// Animated Industry Solution Card Component
+const IndustrySolutionCardAnimated = ({ icon, title, description, features, darkMode, delay }) => {
     return (
-        <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-50'} shadow-lg transition-all duration-300 h-full`}>
+        <motion.div 
+            className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-50'} shadow-lg transition-all duration-300`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay }}
+            whileHover={{ y: -5 }}
+        >
             <div className="mb-4">{icon}</div>
             <h3 className="text-xl font-bold mb-2">{title}</h3>
-            <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>{description}</p>
-            <h4 className="font-semibold mb-2">Key Features:</h4>
-            <ul className="space-y-1">
-                {features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                        <FaCheckCircle className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                        <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{feature}</span>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-};
-
-// Business Size Card Component
-const BusinessSizeCard = ({ icon, title, description, features, darkMode }) => {
-    return (
-        <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} shadow-lg h-full`}>
-            <div className="mb-4">{icon}</div>
-            <h3 className="text-xl font-bold mb-2">{title}</h3>
-            <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>{description}</p>
+            <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{description}</p>
             <ul className="space-y-2">
                 {features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
+                    <motion.li 
+                        key={index} 
+                        className="flex items-start"
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: delay + (index * 0.1) }}
+                    >
                         <FaCheckCircle className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                        <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{feature}</span>
-                    </li>
+                        <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{feature}</span>
+                    </motion.li>
                 ))}
             </ul>
-        </div>
+        </motion.div>
     );
 };
 
-// Case Study Card Component
-const CaseStudyCard = ({ industry, company, result, quote, darkMode }) => {
+// Animated Business Size Card Component
+const BusinessSizeCardAnimated = ({ icon, title, description, features, darkMode, delay }) => {
     return (
-        <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-lg border-l-4 border-blue-500`}>
-            <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mb-3 ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-blue-100 text-blue-800'}`}>
+        <motion.div 
+            className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'} shadow-lg transition-all duration-300`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay }}
+            whileHover={{ scale: 1.03 }}
+        >
+            <div className="mb-4">{icon}</div>
+            <h3 className="text-xl font-bold mb-2">{title}</h3>
+            <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{description}</p>
+            <ul className="space-y-2">
+                {features.map((feature, index) => (
+                    <motion.li 
+                        key={index} 
+                        className="flex items-start"
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: delay + (index * 0.1) }}
+                    >
+                        <FaCheckCircle className="text-green-500 mt-1 mr-2 flex-shrink-0" />
+                        <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{feature}</span>
+                    </motion.li>
+                ))}
+            </ul>
+        </motion.div>
+    );
+};
+
+// Animated Case Study Card Component
+const CaseStudyCardAnimated = ({ industry, company, result, quote, darkMode, delay }) => {
+    return (
+        <motion.div 
+            className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-lg`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay }}
+            whileHover={{ scale: 1.02 }}
+        >
+            <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mb-4 ${darkMode ? 'bg-blue-900 text-blue-100' : 'bg-blue-100 text-blue-800'}`}>
                 {industry}
             </div>
             <h3 className="text-xl font-bold mb-2">{company}</h3>
-            <p className={`font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'} mb-3`}>{result}</p>
-            <blockquote className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                "{quote}"
-            </blockquote>
-        </div>
+            <div className={`text-lg font-bold mb-3 ${darkMode ? 'text-green-400' : 'text-green-600'}`}>{result}</div>
+            <p className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>"{quote}"</p>
+        </motion.div>
     );
 };
 
-// Process Card Component
-const ProcessCard = ({ number, title, description, darkMode }) => {
+// Animated Process Card Component
+const ProcessCardAnimated = ({ number, title, description, darkMode, delay }) => {
     return (
-        <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg text-center`}>
-            <div className={`w-12 h-12 rounded-full ${darkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-600'} flex items-center justify-center text-xl font-bold mx-auto mb-4`}>
+        <motion.div 
+            className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg text-center`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay }}
+        >
+            <motion.div 
+                className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mx-auto mb-4"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+            >
                 {number}
-            </div>
+            </motion.div>
             <h3 className="text-xl font-bold mb-2">{title}</h3>
-            <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{description}</p>
-        </div>
+            <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{description}</p>
+        </motion.div>
     );
 };
 

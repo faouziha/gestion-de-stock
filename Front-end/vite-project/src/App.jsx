@@ -16,8 +16,12 @@ import EditProduct from './Components/Dashboard components/Product/EditProduct'
 import ViewProduct from './Components/Dashboard components/Product/ViewProduct'
 import DisplayOrders from './Components/Dashboard components/Product/Orders/DisplayOrders'
 import AddOrders from './Components/Dashboard components/Product/Orders/AddOrders'
-import EditOrder from './Components/Dashboard components/Product/Orders/EditOrder'
+import EditOrders from './Components/Dashboard components/Product/Orders/EditOrders'
 import ViewOrder from './Components/Dashboard components/Product/Orders/ViewOrder'
+import DisplaySuppliers from './Components/Dashboard components/Suppliers/DisplaySuppliers'
+import AddSupplier from './Components/Dashboard components/Suppliers/AddSupplier'
+import EditSupplier from './Components/Dashboard components/Suppliers/EditSupplier'
+import ViewSupplier from './Components/Dashboard components/Suppliers/ViewSupplier'
 import Features from './Components/Features'
 import Solutions from './Components/Solutions'
 import Pricing from './Components/Pricing'
@@ -54,8 +58,13 @@ function App() {
                 {/* Order Routes */}
                 <Route path="/orders" element={<DisplayOrders />} />
                 <Route path="/orders/add" element={<AddOrders />} />
-                <Route path="/orders/edit/:id" element={<EditOrder />} />
+                <Route path="/orders/edit/:id" element={<EditOrders />} />
                 <Route path="/orders/view/:id" element={<ViewOrder />} />
+                {/* Supplier Routes */}
+                <Route path="/suppliers" element={<DisplaySuppliers />} />
+                <Route path="/suppliers/add" element={<AddSupplier />} />
+                <Route path="/suppliers/edit/:id" element={<EditSupplier />} />
+                <Route path="/suppliers/view/:id" element={<ViewSupplier />} />
                 {/* Add more dashboard routes here */}
               </Route>
             </Routes>

@@ -10,6 +10,7 @@ export default function DashboardLayout() {
   const { darkMode } = useTheme();
   const [productsMenuOpen, setProductsMenuOpen] = useState(true); 
   const [ordersMenuOpen, setOrdersMenuOpen] = useState(false);
+  const [suppliersMenuOpen, setSuppliersMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -19,6 +20,9 @@ export default function DashboardLayout() {
     }
     if (location.pathname.includes('order') || location.pathname.includes('orders')) {
       setOrdersMenuOpen(true);
+    }
+    if (location.pathname.includes('supplier') || location.pathname.includes('suppliers')) {
+      setSuppliersMenuOpen(true);
     }
   }, [location.pathname]);
 
@@ -191,18 +195,52 @@ export default function DashboardLayout() {
             )}
           </div>
           
-          <Link 
-            to="/suppliers" 
-            className={`px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
-              location.pathname === '/suppliers' 
-                ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
-                : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
-            }`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FaTruck className="mr-3" />
-            <span>Fournisseurs</span>
-          </Link>
+          {/* Suppliers with dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setSuppliersMenuOpen(!suppliersMenuOpen)}
+              className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 ${
+                location.pathname.includes('supplier') || location.pathname.includes('suppliers')
+                  ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
+                  : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+              }`}
+            >
+              <div className="flex items-center">
+                <FaTruck className="mr-3" />
+                <span>Suppliers</span>
+              </div>
+              {suppliersMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
+            </button>
+            
+            {suppliersMenuOpen && (
+              <div className="ml-4 mt-2 flex flex-col space-y-2 rounded-lg overflow-hidden">
+                <Link 
+                  to="/suppliers" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/suppliers' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Display Suppliers
+                </Link>
+                <Link 
+                  to="/suppliers/add" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/suppliers/add' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Add New Supplier
+                </Link>
+              </div>
+            )}
+          </div>
           
           <Link 
             to="/clients" 

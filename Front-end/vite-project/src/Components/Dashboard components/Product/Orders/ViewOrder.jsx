@@ -96,9 +96,16 @@ export default function ViewOrder() {
                     Created on {formatDate(order.date_commande)}
                   </p>
                 </div>
-                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium self-start sm:self-auto">
-                  Completed
-                </div>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium self-start sm:self-auto
+                  ${order.status === 'Pending' ? `${darkMode ? 'bg-yellow-800 text-yellow-100' : 'bg-yellow-100 text-yellow-800'}` : ''}
+                  ${order.status === 'Processing' ? `${darkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'}` : ''}
+                  ${order.status === 'Shipped' ? `${darkMode ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-100 text-indigo-800'}` : ''}
+                  ${order.status === 'Delivered' ? `${darkMode ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'}` : ''}
+                  ${order.status === 'Cancelled' ? `${darkMode ? 'bg-red-800 text-red-100' : 'bg-red-100 text-red-800'}` : ''}
+                  ${!order.status ? `${darkMode ? 'bg-yellow-800 text-yellow-100' : 'bg-yellow-100 text-yellow-800'}` : ''}
+                `}>
+                  {order.status || 'Pending'}
+                </span>
               </div>
               
               <div className="mb-6">

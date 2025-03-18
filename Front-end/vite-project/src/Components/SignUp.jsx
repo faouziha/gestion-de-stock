@@ -135,7 +135,7 @@ return (
                         />
                         <span 
                             onClick={togglePasswordVisibility} 
-                            className={`absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                            className={`absolute right-3 top-[40%] transform -translate-y-1/2 cursor-pointer ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                         >
                             {showPassword ? <FaEyeSlash /> : <FaEye />}
                         </span>

@@ -142,6 +142,9 @@ export default function DisplayOrders() {
                       Date
                     </th>
                     <th scope="col" className={`px-4 sm:px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                      Status
+                    </th>
+                    <th scope="col" className={`px-4 sm:px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Actions
                     </th>
                   </tr>
@@ -163,6 +166,18 @@ export default function DisplayOrders() {
                       </td>
                       <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-center ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                         {formatDate(order.date_commande) || new Date().toLocaleDateString()}
+                      </td>
+                      <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-center`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${order.status === 'Pending' ? `${darkMode ? 'bg-yellow-800 text-yellow-100' : 'bg-yellow-100 text-yellow-800'}` : ''}
+                          ${order.status === 'Processing' ? `${darkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'}` : ''}
+                          ${order.status === 'Shipped' ? `${darkMode ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-100 text-indigo-800'}` : ''}
+                          ${order.status === 'Delivered' ? `${darkMode ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'}` : ''}
+                          ${order.status === 'Cancelled' ? `${darkMode ? 'bg-red-800 text-red-100' : 'bg-red-100 text-red-800'}` : ''}
+                          ${!order.status ? `${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-800'}` : ''}
+                        `}>
+                          {order.status || 'Pending'}
+                        </span>
                       </td>
                       <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex justify-center space-x-3">
@@ -198,11 +213,25 @@ export default function DisplayOrders() {
             {/* Mobile view - Cards */}
             <div className="md:hidden space-y-4">
               {orders.map(order => (
-                <div key={order.id} className={`${darkMode ? 'bg-gray-700' : 'bg-white'} rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>#{order.id}</h3>
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                      {formatDate(order.date_commande) || new Date().toLocaleDateString()}
+                <div key={order.id} className={`${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg shadow-sm p-4`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        Order #{order.id}
+                      </h3>
+                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                        {formatDate(order.date_commande)}
+                      </p>
+                    </div>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${order.status === 'Pending' ? `${darkMode ? 'bg-yellow-800 text-yellow-100' : 'bg-yellow-100 text-yellow-800'}` : ''}
+                      ${order.status === 'Processing' ? `${darkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'}` : ''}
+                      ${order.status === 'Shipped' ? `${darkMode ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-100 text-indigo-800'}` : ''}
+                      ${order.status === 'Delivered' ? `${darkMode ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'}` : ''}
+                      ${order.status === 'Cancelled' ? `${darkMode ? 'bg-red-800 text-red-100' : 'bg-red-100 text-red-800'}` : ''}
+                      ${!order.status ? `${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-800'}` : ''}
+                    `}>
+                      {order.status || 'Pending'}
                     </span>
                   </div>
                   <div className="mb-3">

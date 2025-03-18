@@ -30,8 +30,8 @@ export default function Dashboard() {
         const ordersResponse = await axios.get(`http://localhost:3000/commande?userId=${user.id}`);
         const orders = ordersResponse.data;
         
-        // Fetch suppliers count
-        const suppliersResponse = await axios.get('http://localhost:3000/fournisseur');
+        // Fetch suppliers count - filter by user ID
+        const suppliersResponse = await axios.get(`http://localhost:3000/fournisseur?userId=${user.id}`);
         const suppliers = suppliersResponse.data;
         
         // Find products with low stock (less than 5 units)
