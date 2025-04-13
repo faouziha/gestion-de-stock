@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
+import { API_URLS } from '../config/api';
 
 const SignUp = () => {
 const navigate = useNavigate();
@@ -45,7 +46,7 @@ const handleSubmit = async (e) => {
     }
     
     try {
-        const response = await axios.post(import.meta.env.VITE_SIGNUP_URL, {
+        const response = await axios.post(API_URLS.register, {
             name: formData.name,
             lastName: formData.lastName,
             email: formData.email,
@@ -62,7 +63,7 @@ const handleSubmit = async (e) => {
 };
 
 useEffect(() => {
-    axios.get(import.meta.env.VITE_USERS_URL)
+    axios.get(API_URLS.users)
     .then((res) => {
         console.log(res.data);
         setData(res.data);

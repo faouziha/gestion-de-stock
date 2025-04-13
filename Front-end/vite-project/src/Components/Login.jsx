@@ -4,6 +4,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { API_URLS } from '../config/api';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -26,7 +27,7 @@ const Login = () => {
     };
 
     useEffect(() => {
-        axios.get(import.meta.env.VITE_LOGIN_URL)
+        axios.get(API_URLS.users)
         .then((res) => {
             console.log(res.data);
             setUsers(res.data);
@@ -42,7 +43,7 @@ const Login = () => {
         setLoading(true);
         
         try {
-            const response = await axios.post(import.meta.env.VITE_LOGIN_URL, formData);
+            const response = await axios.post(API_URLS.login, formData);
             console.log("Login successful:", response.data);
             
             // Use the login function from context instead of directly using localStorage
