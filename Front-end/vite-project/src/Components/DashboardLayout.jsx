@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { FaChevronDown, FaChevronRight, FaBars, FaTimes, FaHome, FaBox, FaShoppingCart, FaTruck, FaUsers, FaSun, FaMoon } from 'react-icons/fa'
+import { FaChevronDown, FaChevronRight, FaBars, FaTimes, FaHome, FaBox, FaShoppingCart, FaTruck, FaUsers, FaSun, FaMoon, FaUserCircle, FaUserShield } from 'react-icons/fa'
 import ThemeToggle from './ThemeToggle'
 
 export default function DashboardLayout() {
@@ -11,6 +11,8 @@ export default function DashboardLayout() {
   const [productsMenuOpen, setProductsMenuOpen] = useState(true); 
   const [ordersMenuOpen, setOrdersMenuOpen] = useState(false);
   const [suppliersMenuOpen, setSuppliersMenuOpen] = useState(false);
+  const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
+  const [facturesMenuOpen, setFacturesMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -23,6 +25,12 @@ export default function DashboardLayout() {
     }
     if (location.pathname.includes('supplier') || location.pathname.includes('suppliers')) {
       setSuppliersMenuOpen(true);
+    }
+    if (location.pathname.includes('client') || location.pathname.includes('clients')) {
+      setClientsMenuOpen(true);
+    }
+    if (location.pathname.includes('facture') || location.pathname.includes('factures')) {
+      setFacturesMenuOpen(true);
     }
   }, [location.pathname]);
 
@@ -81,9 +89,6 @@ export default function DashboardLayout() {
           <div>
             <h2 className={`text-2xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>Dashboard</h2>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mt-2`}>Welcome, {user.name}!</p>
-          </div>
-          <div className="md:hidden">
-            <ThemeToggle />
           </div>
         </div>
         <div className="flex flex-col space-y-3 px-4">
@@ -242,18 +247,115 @@ export default function DashboardLayout() {
             )}
           </div>
           
-          <Link 
-            to="/clients" 
-            className={`px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
-              location.pathname === '/clients' 
-                ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
-                : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
-            }`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FaUsers className="mr-3" />
-            <span>Clients</span>
-          </Link>
+          {/* Clients with dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setClientsMenuOpen(!clientsMenuOpen)}
+              className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 ${
+                location.pathname.includes('client') || location.pathname.includes('clients')
+                  ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
+                  : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+              }`}
+            >
+              <div className="flex items-center">
+                <FaUsers className="mr-3" />
+                <span>Clients</span>
+              </div>
+              {clientsMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
+            </button>
+            
+            {clientsMenuOpen && (
+              <div className="ml-4 mt-2 flex flex-col space-y-2 rounded-lg overflow-hidden">
+                <Link 
+                  to="/clients" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/clients' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Display Clients
+                </Link>
+                <Link 
+                  to="/clients/add" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/clients/add' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Add New Client
+                </Link>
+              </div>
+            )}
+          </div>
+          
+          {/* Factures with dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setFacturesMenuOpen(!facturesMenuOpen)}
+              className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 ${
+                location.pathname.includes('facture') || location.pathname.includes('factures')
+                  ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
+                  : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+              }`}
+            >
+              <div className="flex items-center">
+                <FaUsers className="mr-3" />
+                <span>Factures</span>
+              </div>
+              {facturesMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
+            </button>
+            
+            {facturesMenuOpen && (
+              <div className="ml-4 mt-2 flex flex-col space-y-2 rounded-lg overflow-hidden">
+                <Link 
+                  to="/factures" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/factures' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Display Factures
+                </Link>
+                <Link 
+                  to="/factures/add" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/factures/add' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Add New Facture
+                </Link>
+              </div>
+            )}
+          </div>
+          
+          {/* Admin Link - Only show for admin users */}
+          {user.role === 'admin' && (
+            <Link 
+              to="/admin" 
+              className={`px-4 py-3 rounded-lg flex items-center transition-all duration-200 ${
+                location.pathname === '/admin' 
+                  ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
+                  : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+              }`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+            >
+              <FaUserShield className="mr-3" />
+              <span>User Management</span>
+            </Link>
+          )}
         </div>
       </div>
       

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { FaEdit, FaTrash, FaEye, FaPlus } from 'react-icons/fa'
-import { useAuth } from '../../../../context/AuthContext'
-import { useTheme } from '../../../../context/ThemeContext'
+import { useAuth } from '../../../context/AuthContext'
+import { useTheme } from '../../../context/ThemeContext'
 import { useNavigate } from 'react-router-dom'
 
 export default function DisplayOrders() {

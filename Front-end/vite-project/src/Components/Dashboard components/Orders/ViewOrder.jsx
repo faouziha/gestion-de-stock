@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useAuth } from '../../../../context/AuthContext'
-import { useTheme } from '../../../../context/ThemeContext'
-import { FaArrowLeft, FaEdit, FaUser } from 'react-icons/fa'
+import { useAuth } from '../../../context/AuthContext'
+import { useTheme } from '../../../context/ThemeContext'
+import { FaArrowLeft, FaEdit, FaPrint } from 'react-icons/fa'
 
 export default function ViewOrder() {
   const { id } = useParams()
@@ -13,6 +13,82 @@ export default function ViewOrder() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { darkMode } = useTheme()
+
+  // Direct print function using browser's print API
+  const handlePrint = () => {
+    // Add print-specific styles
+    const style = document.createElement('style');
+    style.id = 'print-style';
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: A4;
+          margin: 0.5cm;
+        }
+        
+        body * {
+          visibility: hidden;
+        }
+        
+        #printable-order, #printable-order * {
+          visibility: visible;
+        }
+        
+        #printable-order {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 10px;
+          background-color: white !important;
+          color: black !important;
+          border: 1px solid black !important;
+        }
+        
+        #printable-order h2 {
+          font-size: 18px !important;
+          margin-bottom: 5px !important;
+        }
+        
+        #printable-order h3 {
+          font-size: 16px !important;
+          margin-bottom: 5px !important;
+        }
+        
+        #printable-order p {
+          font-size: 12px !important;
+          margin-bottom: 3px !important;
+        }
+        
+        #printable-order .mb-6 {
+          margin-bottom: 10px !important;
+        }
+        
+        #printable-order .p-4 {
+          padding: 8px !important;
+        }
+        
+        #printable-order .rounded-md {
+          border-radius: 4px !important;
+        }
+        
+        .print-hide {
+          display: none !important;
+        }
+        
+        .print-show {
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Print
+    window.print();
+    
+    // Remove print styles after printing
+    document.head.removeChild(style);
+  };
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -87,7 +163,9 @@ export default function ViewOrder() {
         )}
         
         {!loading && order && (
-          <div className={`${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-lg rounded-lg overflow-hidden`}>
+          <div 
+            id="printable-order"
+            className={`${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-lg rounded-lg overflow-hidden`}>
             <div className="p-4 sm:p-6">
               <div className={`flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 pb-4 border-b ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                 <div className="mb-3 sm:mb-0">
@@ -141,13 +219,19 @@ export default function ViewOrder() {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 print-hide">
                 <button
                   onClick={() => navigate(`/orders/edit/${order.id}`)}
                   className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center"
                 >
                   <FaEdit className="mr-2" />
                   Edit Order
+                </button>
+                <button  
+                  onClick={handlePrint}
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
+                  <FaPrint className="mr-2" />
+                  Print
                 </button>
                 <button
                   onClick={() => navigate('/orders')}

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FaCalendarAlt, FaUser, FaArrowLeft } from 'react-icons/fa'
-import { useAuth } from '../../../../context/AuthContext'
-import { useTheme } from '../../../../context/ThemeContext'
+import { useAuth } from '../../../context/AuthContext'
+import { useTheme } from '../../../context/ThemeContext'
 
 export default function EditOrders() {
   const { id } = useParams()
@@ -13,9 +13,11 @@ export default function EditOrders() {
     quantite: '',
     date_commande: '',
     customer_name: '',
+    client_id: '', // Add client ID field
     status: 'Pending'
   })
   const [products, setProducts] = useState([])
+  const [clients, setClients] = useState([]) // Add state for clients
   const [loading, setLoading] = useState(false)
   const [fetchLoading, setFetchLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -49,6 +51,7 @@ export default function EditOrders() {
           quantite: orderData.quantite.toString(),
           date_commande: orderData.date_commande,
           customer_name: orderData.customer_name || '',
+          client_id: orderData.client_id || '', // Add client ID
           status: orderData.status || 'Pending'
         })
         
@@ -68,16 +71,18 @@ export default function EditOrders() {
     fetchOrderData()
   }, [id])
 
-  // Fetch products for dropdown selection
+  // Fetch products and clients
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/produit?userId=${user.id}`)
-        setProducts(response.data)
+        // Fetch products
+        const productsResponse = await axios.get(`http://localhost:3000/produit?userId=${user.id}`)
+        const productsData = productsResponse.data;
+        setProducts(productsData)
         
         // If we have form data with a product ID, set the selected product
         if (formData.produit_id) {
-          const product = response.data.find(p => p.id === parseInt(formData.produit_id))
+          const product = productsData.find(p => p.id === parseInt(formData.produit_id))
           setSelectedProduct(product)
           
           // Check available stock for the selected product
@@ -85,13 +90,19 @@ export default function EditOrders() {
             checkAvailableStock(formData.produit_id);
           }
         }
+        
+        // Fetch clients
+        const clientsResponse = await axios.get(`http://localhost:3000/clients?userId=${user.id}`)
+        setClients(clientsResponse.data)
       } catch (error) {
-        console.error('Error fetching products:', error)
-        setError('Failed to load products. Please try again later.')
+        console.error('Error fetching data:', error)
+        setError('Failed to load necessary data. Please try again.')
+      } finally {
+        setFetchLoading(false)
       }
     }
-
-    fetchProducts()
+    
+    fetchData()
   }, [user.id, formData.produit_id])
 
   // Function to check available stock for a product
@@ -139,7 +150,7 @@ export default function EditOrders() {
     setFormData({
       ...formData,
       produit_id: productId,
-      nom_produit: productId ? products.find(p => p.id === parseInt(productId))?.nom_produit || '' : ''
+      nom_produit: productId ? products.find(p => p.id === parseInt(productId))?.nom || '' : ''
     })
     
     // Check available stock for the selected product
@@ -147,34 +158,42 @@ export default function EditOrders() {
       checkAvailableStock(productId)
     }
   }
-  
-  // Handle form field changes
+
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target
     
-    // If there's no name attribute, try to determine what field changed based on the type
-    if (!name) {
-      if (e.target.type === 'date') {
-        setFormData({ ...formData, date_commande: value })
-      } else if (e.target.type === 'number') {
-        setFormData({ ...formData, quantite: value })
-      } else if (e.target.type === 'select-one') {
-        if (e.target.options[0].value === '') {
-          // This is the product dropdown
-          handleProductChange(e)
-        } else {
-          // This is the status dropdown
-          setFormData({ ...formData, status: value })
-        }
-      } else {
-        // Assume it's the customer name
-        setFormData({ ...formData, customer_name: value })
-      }
-      return
+    if (name === 'produit_id') {
+      // Find the selected product
+      const product = products.find(p => p.id === parseInt(value))
+      setSelectedProduct(product)
+      
+      // Update form data with product details
+      setFormData(prev => ({
+        ...prev,
+        produit_id: value,
+        nom_produit: product ? product.nom : ''
+      }))
+      
+      // Check available stock for this product
+      checkAvailableStock(value)
+    } else if (name === 'client_id' && value) {
+      // Find the selected client
+      const client = clients.find(c => c.id === parseInt(value))
+      
+      // Update form data with client details
+      setFormData(prev => ({
+        ...prev,
+        client_id: value,
+        customer_name: client ? `${client.nom} ${client.prenom}` : ''
+      }))
+    } else {
+      // Update other form fields normally
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
     }
-    
-    // Normal handling with name attribute
-    setFormData({ ...formData, [name]: value })
   }
 
   // Handle form submission
@@ -305,7 +324,7 @@ export default function EditOrders() {
                   <option value="">Select a product</option>
                   {products.map((product) => (
                     <option key={product.id} value={product.id}>
-                      {product.nom_produit}
+                      {product.nom}
                     </option>
                   ))}
                 </select>
@@ -323,6 +342,7 @@ export default function EditOrders() {
                 </label>
                 <input
                   type="number"
+                  name="quantite"
                   value={formData.quantite}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 rounded-md border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}
@@ -331,16 +351,25 @@ export default function EditOrders() {
                 />
               </div>
 
-              {/* Customer Name */}
+              {/* Customer */}
               <div className="col-span-1">
-                <label className="block text-sm font-medium mb-1">Customer Name</label>
-                <input
-                  type="text"
-                  value={formData.customer_name}
+                <label className="block text-sm font-medium mb-1">Customer</label>
+                <select
+                  name="client_id"
+                  value={formData.client_id}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 rounded-md border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}
-                  placeholder="Customer name"
-                />
+                >
+                  <option value="">Select a customer</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.nom} {client.prenom} - {client.email}
+                    </option>
+                  ))}
+                </select>
+                <p className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Select an existing customer from your client list
+                </p>
               </div>
 
               {/* Order Date */}
@@ -348,6 +377,7 @@ export default function EditOrders() {
                 <label className="block text-sm font-medium mb-1">Order Date</label>
                 <input
                   type="date"
+                  name="date_commande"
                   value={formData.date_commande}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 rounded-md border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}
@@ -358,6 +388,7 @@ export default function EditOrders() {
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-medium mb-1">Order Status</label>
                 <select
+                  name="status"
                   value={formData.status}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 rounded-md border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}`}

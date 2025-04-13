@@ -14,17 +14,27 @@ import DashboardLayout from './Components/DashboardLayout'
 import AddProduct from './Components/Dashboard components/Product/AddProduct'
 import EditProduct from './Components/Dashboard components/Product/EditProduct'
 import ViewProduct from './Components/Dashboard components/Product/ViewProduct'
-import DisplayOrders from './Components/Dashboard components/Product/Orders/DisplayOrders'
-import AddOrders from './Components/Dashboard components/Product/Orders/AddOrders'
-import EditOrders from './Components/Dashboard components/Product/Orders/EditOrders'
-import ViewOrder from './Components/Dashboard components/Product/Orders/ViewOrder'
+import DisplayOrders from './Components/Dashboard components/Orders/DisplayOrders'
+import AddOrders from './Components/Dashboard components/Orders/AddOrders'
+import EditOrders from './Components/Dashboard components/Orders/EditOrders'
+import ViewOrder from './Components/Dashboard components/Orders/ViewOrder'
 import DisplaySuppliers from './Components/Dashboard components/Suppliers/DisplaySuppliers'
 import AddSupplier from './Components/Dashboard components/Suppliers/AddSupplier'
 import EditSupplier from './Components/Dashboard components/Suppliers/EditSupplier'
 import ViewSupplier from './Components/Dashboard components/Suppliers/ViewSupplier'
+import DisplayClients from './Components/Dashboard components/Clients/DisplayClients'
+import AddClient from './Components/Dashboard components/Clients/AddClient'
+import EditClient from './Components/Dashboard components/Clients/EditClient'
+import ViewClient from './Components/Dashboard components/Clients/ViewClient'
 import Features from './Components/Features'
 import Solutions from './Components/Solutions'
 import Pricing from './Components/Pricing'
+import Profile from './Components/User Profile/Profile'
+import Facture from './Components/Dashboard components/Factures/Facture'
+import AddFactures from './Components/Dashboard components/Factures/AddFactures'
+import ViewFacture from './Components/Dashboard components/Factures/ViewFacture'
+import EditFacture from './Components/Dashboard components/Factures/EditFacture'
+import Admin from './Components/Admin/Admin'
 
 
 function App() {
@@ -65,6 +75,20 @@ function App() {
                 <Route path="/suppliers/add" element={<AddSupplier />} />
                 <Route path="/suppliers/edit/:id" element={<EditSupplier />} />
                 <Route path="/suppliers/view/:id" element={<ViewSupplier />} />
+                {/* Client Routes */}
+                <Route path="/clients" element={<DisplayClients />} />
+                <Route path="/clients/add" element={<AddClient />} />
+                <Route path="/clients/edit/:id" element={<EditClient />} />
+                <Route path="/clients/view/:id" element={<ViewClient />} />
+                {/*Factures Routes */}
+                <Route path="/factures" element={<Facture />} />
+                <Route path="/factures/add" element={<AddFactures />} />
+                <Route path="/factures/view/:id" element={<ViewFacture />} />
+                <Route path="/factures/edit/:id" element={<EditFacture />} />
+                {/* Profile Route */}
+                <Route path="/profile" element={<Profile />} />
+                {/* Admin Route */}
+                <Route path="/admin" element={<Admin />} />
                 {/* Add more dashboard routes here */}
               </Route>
             </Routes>

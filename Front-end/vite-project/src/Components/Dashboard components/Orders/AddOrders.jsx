@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../../context/AuthContext'
-import { useTheme } from '../../../../context/ThemeContext'
+import { useAuth } from '../../../context/AuthContext'
+import { useTheme } from '../../../context/ThemeContext'
 import { FaArrowLeft, FaCalendarAlt, FaPlus, FaUser } from 'react-icons/fa'
 
 export default function AddOrders() {
@@ -11,19 +11,19 @@ export default function AddOrders() {
     nom_produit: '',
     quantite: '',
     date_commande: new Date().toISOString().split('T')[0], // Initialize with current date
+    client_id: '', // Add client ID field
     customer_name: '', // Add customer name field
     status: 'Pending' // Default status
   })
   const [products, setProducts] = useState([])
+  const [clients, setClients] = useState([]) // Add state for clients
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [availableStock, setAvailableStock] = useState(null);
   const navigate = useNavigate()
   const { user } = useAuth()
   const { darkMode } = useTheme()
-
-  // State for available stock
-  const [availableStock, setAvailableStock] = useState(null);
 
   // Fetch products for dropdown selection
   useEffect(() => {
@@ -37,7 +37,18 @@ export default function AddOrders() {
       }
     }
 
+    const fetchClients = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/clients?userId=${user.id}`)
+        setClients(response.data)
+      } catch (error) {
+        console.error('Error fetching clients:', error)
+        setError('Failed to load clients. Please try again later.')
+      }
+    }
+
     fetchProducts()
+    fetchClients() // Fetch clients for dropdown
   }, [user.id])
 
   // Function to check available stock for a product
@@ -75,25 +86,36 @@ export default function AddOrders() {
     }
   };
 
-  // Handle input changes
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target
     
-    // If product selection changes, update the product name as well
     if (name === 'produit_id') {
-      const product = products.find(product => product.id === parseInt(value))
+      // Find the selected product
+      const product = products.find(p => p.id === parseInt(value))
       setSelectedProduct(product)
+      
+      // Update the form data with product details
       setFormData({
         ...formData,
         produit_id: value,
-        nom_produit: product ? product.nom : '',
-        // Reset quantity when product changes
-        quantite: ''
+        nom_produit: product ? product.nom : ''
       })
       
-      // Check available stock for the selected product
-      checkAvailableStock(value);
+      // Check available stock for this product
+      checkAvailableStock(value)
+    } else if (name === 'client_id' && value) {
+      // Find the selected client
+      const client = clients.find(c => c.id === parseInt(value))
+      
+      // Update the form data with client details
+      setFormData({
+        ...formData,
+        client_id: value,
+        customer_name: client ? `${client.nom} ${client.prenom}` : ''
+      })
     } else {
+      // Update other form fields normally
       setFormData({
         ...formData,
         [name]: value
@@ -264,6 +286,34 @@ export default function AddOrders() {
           </div>
           
           <div className="mb-6">
+            <label htmlFor="client_id" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+              Customer
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaUser className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+              </div>
+              <select
+                id="client_id"
+                name="client_id"
+                value={formData.client_id}
+                onChange={handleChange}
+                className={`block w-full pl-10 pr-4 py-2 border ${darkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              >
+                <option value="">Select a customer</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>
+                    {client.nom} {client.prenom} - {client.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Select an existing customer from your client list
+            </p>
+          </div>
+          
+          <div className="mb-6">
             <label htmlFor="status" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
               Order Status
             </label>
@@ -283,26 +333,6 @@ export default function AddOrders() {
             <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               Set the current status of this order
             </p>
-          </div>
-          
-          <div className="mb-6">
-            <label htmlFor="customer_name" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-              Customer Name
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaUser className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-              </div>
-              <input
-                type="text"
-                id="customer_name"
-                name="customer_name"
-                value={formData.customer_name}
-                onChange={handleChange}
-                placeholder="Enter customer name"
-                className={`block w-full pl-10 px-4 py-2 border ${darkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-              />
-            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 pt-4">

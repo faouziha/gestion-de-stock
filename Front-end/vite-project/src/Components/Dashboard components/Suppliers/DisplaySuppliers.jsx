@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FaEdit, FaTrash, FaEye, FaPlus } from 'react-icons/fa'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
-import { useNavigate } from 'react-router-dom'
 
 export default function DisplaySuppliers() {
     const [suppliers, setSuppliers] = useState([]);
@@ -100,7 +99,7 @@ export default function DisplaySuppliers() {
                 )}
                 
                 {suppliers.length > 0 && (
-                    <div className={`overflow-x-auto ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-lg transition-colors`}>
+                    <div className={`overflow-x-auto ${darkMode ? 'bg-gray-900' : 'bg-white'} shadow-md rounded-lg transition-colors`}>
                         {/* Desktop Table View */}
                         <table className="min-w-full divide-y divide-gray-200 hidden md:table">
                             <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'} transition-colors`}>
@@ -144,24 +143,27 @@ export default function DisplaySuppliers() {
                                             {supplier.adresse}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Link 
-                                                    to={`/suppliers/view/${supplier.id}`} 
-                                                    className="text-blue-600 hover:text-blue-900"
+                                            <div className="flex justify-center space-x-3">
+                                                <button 
+                                                    onClick={() => navigate(`/suppliers/view/${supplier.id}`)}
+                                                    className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                                                    aria-label="View supplier"
                                                 >
-                                                    <FaEye className="h-5 w-5" />
-                                                </Link>
-                                                <Link 
-                                                    to={`/suppliers/edit/${supplier.id}`} 
-                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                    <FaEye className="inline mr-1" /> View
+                                                </button>
+                                                <button 
+                                                    onClick={() => navigate(`/suppliers/edit/${supplier.id}`)}
+                                                    className="text-blue-600 hover:text-blue-900 transition-colors"
+                                                    aria-label="Edit supplier"
                                                 >
-                                                    <FaEdit className="h-5 w-5" />
-                                                </Link>
+                                                    <FaEdit className="inline mr-1" /> Edit
+                                                </button>
                                                 <button 
                                                     onClick={() => handleDelete(supplier.id)} 
-                                                    className="text-red-600 hover:text-red-900"
+                                                    className="text-red-600 hover:text-red-900 transition-colors"
+                                                    aria-label="Delete supplier"
                                                 >
-                                                    <FaTrash className="h-5 w-5" />
+                                                    <FaTrash className="inline mr-1" /> Delete
                                                 </button>
                                             </div>
                                         </td>
@@ -171,9 +173,9 @@ export default function DisplaySuppliers() {
                         </table>
                         
                         {/* Mobile Card View */}
-                        <div className="md:hidden">
+                        <div className="md:hidden grid gap-4">
                             {suppliers.map(supplier => (
-                                <div key={supplier.id} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b mb-4 rounded-lg overflow-hidden shadow-sm transition-colors`}>
+                                <div key={supplier.id} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg overflow-hidden shadow-sm transition-colors`}>
                                     <div className="px-4 py-3">
                                         <h3 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{supplier.nom_entreprise}</h3>
                                         <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Contact: {supplier.contact_nom}</p>
@@ -198,21 +200,24 @@ export default function DisplaySuppliers() {
                                     </div>
                                     
                                     <div className="px-4 py-3 flex justify-between">
-                                        <Link 
-                                            to={`/suppliers/view/${supplier.id}`} 
-                                            className={`inline-flex items-center px-3 py-1.5 border ${darkMode ? 'border-green-500 text-green-400 hover:bg-green-900' : 'border-green-600 text-green-600 hover:bg-green-50'} rounded-md transition-colors text-sm`}
+                                        <button 
+                                            onClick={() => navigate(`/suppliers/view/${supplier.id}`)}
+                                            className="text-indigo-600 hover:text-indigo-900 transition-colors flex items-center"
+                                            aria-label="View supplier"
                                         >
                                             <FaEye className="mr-1" /> View
-                                        </Link>
-                                        <Link 
-                                            to={`/suppliers/edit/${supplier.id}`} 
-                                            className={`inline-flex items-center px-3 py-1.5 border ${darkMode ? 'border-blue-500 text-blue-400 hover:bg-blue-900' : 'border-blue-600 text-blue-600 hover:bg-blue-50'} rounded-md transition-colors text-sm`}
+                                        </button>
+                                        <button 
+                                            onClick={() => navigate(`/suppliers/edit/${supplier.id}`)}
+                                            className="text-blue-600 hover:text-blue-900 transition-colors flex items-center"
+                                            aria-label="Edit supplier"
                                         >
                                             <FaEdit className="mr-1" /> Edit
-                                        </Link>
+                                        </button>
                                         <button 
                                             onClick={() => handleDelete(supplier.id)} 
-                                            className={`inline-flex items-center px-3 py-1.5 border ${darkMode ? 'border-red-500 text-red-400 hover:bg-red-900' : 'border-red-600 text-red-600 hover:bg-red-50'} rounded-md transition-colors text-sm`}
+                                            className="text-red-600 hover:text-red-900 transition-colors flex items-center"
+                                            aria-label="Delete supplier"
                                         >
                                             <FaTrash className="mr-1" /> Delete
                                         </button>

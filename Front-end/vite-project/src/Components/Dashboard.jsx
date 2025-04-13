@@ -34,6 +34,10 @@ export default function Dashboard() {
         const suppliersResponse = await axios.get(`http://localhost:3000/fournisseur?userId=${user.id}`);
         const suppliers = suppliersResponse.data;
         
+        // Fetch clients count - filter by user ID
+        const clientsResponse = await axios.get(`http://localhost:3000/clients?userId=${user.id}`);
+        const clients = clientsResponse.data;
+        
         // Find products with low stock (less than 5 units)
         const lowStock = products.filter(product => parseInt(product.total) < 5);
         setLowStockProducts(lowStock);
@@ -42,7 +46,7 @@ export default function Dashboard() {
           products: products.length,
           orders: orders.length,
           suppliers: suppliers.length,
-          clients: 0 // You can add client count when available
+          clients: clients.length // Update with actual client count
         });
         
         setLoading(false);
@@ -138,6 +142,12 @@ export default function Dashboard() {
               {loading ? '...' : stats.clients}
             </p>
             <p className={`text-sm ${darkMode ? 'text-purple-300' : 'text-purple-600'} mt-1`}>Registered clients</p>
+            <Link 
+              to="/clients" 
+              className={`inline-block mt-3 text-sm font-medium ${darkMode ? 'text-purple-300 hover:text-purple-200' : 'text-purple-700 hover:text-purple-800'}`}
+            >
+              View all clients →
+            </Link>
           </div>
         </div>
       </div>

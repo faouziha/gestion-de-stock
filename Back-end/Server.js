@@ -54,6 +54,73 @@ app.get("/setup/add-status-column", async (req, res) => {
     }
 });
 
+// Route to create facture and facture_items tables if they don't exist
+app.get("/setup/create-facture-tables", async (req, res) => {
+    try {
+        // Check if the facture table exists
+        const checkFactureTableQuery = `
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'facture'
+        `;
+        const factureTableCheck = await db.query(checkFactureTableQuery);
+        
+        // Create facture table if it doesn't exist
+        if (factureTableCheck.rows.length === 0) {
+            const createFactureTableQuery = `
+                CREATE TABLE facture (
+                    id SERIAL PRIMARY KEY,
+                    invoice_number VARCHAR(50) NOT NULL,
+                    customer_name VARCHAR(100) NOT NULL,
+                    client_id INTEGER REFERENCES clients(id),
+                    date DATE NOT NULL,
+                    due_date DATE,
+                    status VARCHAR(20) DEFAULT 'Draft',
+                    notes TEXT,
+                    total_amount DECIMAL(10, 2) NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `;
+            await db.query(createFactureTableQuery);
+        }
+        
+        // Check if the facture_items table exists
+        const checkItemsTableQuery = `
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'facture_items'
+        `;
+        const itemsTableCheck = await db.query(checkItemsTableQuery);
+        
+        // Create facture_items table if it doesn't exist
+        if (itemsTableCheck.rows.length === 0) {
+            const createItemsTableQuery = `
+                CREATE TABLE facture_items (
+                    id SERIAL PRIMARY KEY,
+                    facture_id INTEGER REFERENCES facture(id) ON DELETE CASCADE,
+                    description VARCHAR(255) NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    unit_price DECIMAL(10, 2) NOT NULL,
+                    amount DECIMAL(10, 2) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `;
+            await db.query(createItemsTableQuery);
+        }
+        
+        res.json({ 
+            success: true, 
+            message: "Facture tables setup completed",
+            factureTableCreated: factureTableCheck.rows.length === 0,
+            itemsTableCreated: itemsTableCheck.rows.length === 0
+        });
+    } catch (error) {
+        console.error("Error setting up facture tables:", error);
+        res.status(500).json({ error: "Failed to setup facture tables" });
+    }
+});
+
 app.get("/users", (req, res) => {
     const dbQuery = "SELECT * FROM users";
     db.query(dbQuery, (err, result) => {
@@ -140,6 +207,142 @@ app.post("/register", (req, res) => {
         });
     } catch (error) {
         console.error("Registration error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Update user profile
+app.put("/users/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, lastName, email, phone, address, password, currentPassword } = req.body;
+        
+        // Validate input
+        if (!name || !lastName || !email) {
+            return res.status(400).json({ error: "Name, last name, and email are required" });
+        }
+        
+        // Check if user exists
+        const checkUserQuery = "SELECT * FROM users WHERE id = $1";
+        const userCheck = await db.query(checkUserQuery, [id]);
+        
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const user = userCheck.rows[0];
+        
+        // Check if email is already taken by another user
+        const emailCheckQuery = "SELECT * FROM users WHERE email = $1 AND id != $2";
+        const emailCheck = await db.query(emailCheckQuery, [email, id]);
+        
+        if (emailCheck.rows.length > 0) {
+            return res.status(409).json({ error: "Email is already in use by another account" });
+        }
+        
+        // If password change is requested, verify current password
+        if (password && password.trim() !== '') {
+            if (!currentPassword) {
+                return res.status(400).json({ error: "Current password is required to set a new password" });
+            }
+            
+            // Verify current password
+            if (currentPassword !== user.password) {
+                return res.status(401).json({ error: "Current password is incorrect" });
+            }
+        }
+        
+        // Update user in database
+        let updateUserQuery;
+        let values;
+        
+        if (password && password.trim() !== '') {
+            updateUserQuery = `
+                UPDATE users 
+                SET name = $1, last_name = $2, email = $3, phone = $4, address = $5, password = $6
+                WHERE id = $7 
+                RETURNING *
+            `;
+            values = [name, lastName, email, phone || null, address || null, password, id];
+        } else {
+            updateUserQuery = `
+                UPDATE users 
+                SET name = $1, last_name = $2, email = $3, phone = $4, address = $5
+                WHERE id = $6 
+                RETURNING *
+            `;
+            values = [name, lastName, email, phone || null, address || null, id];
+        }
+        
+        const result = await db.query(updateUserQuery, values);
+        
+        // Return the updated user
+        const updatedUser = result.rows[0];
+        
+        res.status(200).json({
+            message: "User profile updated successfully",
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Get all users (admin only)
+app.get("/users", async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        
+        // First check if the requesting user is an admin
+        const checkAdminQuery = "SELECT role FROM users WHERE id = $1";
+        const adminCheck = await db.query(checkAdminQuery, [userId]);
+        
+        if (adminCheck.rows.length === 0 || adminCheck.rows[0].role !== 'admin') {
+            return res.status(403).json({ error: "Unauthorized access" });
+        }
+        
+        // If admin, return all users
+        const query = "SELECT id, name, last_name, email, phone, address, role, created_at FROM users";
+        const result = await db.query(query);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Delete a user (admin only)
+app.delete("/users/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        // Check if the requesting user is an admin
+        const checkAdminQuery = "SELECT role FROM users WHERE id = $1";
+        const adminCheck = await db.query(checkAdminQuery, [userId]);
+        
+        if (adminCheck.rows.length === 0 || adminCheck.rows[0].role !== 'admin') {
+            return res.status(403).json({ error: "Unauthorized access" });
+        }
+        
+        // Prevent deleting your own account
+        if (parseInt(id) === parseInt(userId)) {
+            return res.status(400).json({ error: "You cannot delete your own account" });
+        }
+        
+        // Delete the user
+        const deleteQuery = "DELETE FROM users WHERE id = $1 RETURNING *";
+        const result = await db.query(deleteQuery, [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        res.json({ message: "User deleted successfully", user: result.rows[0] });
+    } catch (error) {
+        console.error("Error deleting user:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -847,6 +1050,425 @@ app.delete("/fournisseur/:id", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 })
+
+// CLIENTS API ENDPOINTS
+
+// Get all clients
+app.get("/clients", async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        
+        const allClients = await db.query("SELECT * FROM clients WHERE userid = $1 ORDER BY date_creation DESC", [userId]);
+        res.json(allClients.rows);
+    } catch (error) {
+        console.error("Error fetching clients:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Get a specific client
+app.get("/clients/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        
+        const client = await db.query("SELECT * FROM clients WHERE id = $1 AND userid = $2", [id, userId]);
+        
+        if (client.rows.length === 0) {
+            return res.status(404).json({ error: "Client not found" });
+        }
+        
+        res.json(client.rows[0]);
+    } catch (error) {
+        console.error("Error fetching client:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Create a new client
+app.post("/clients", async (req, res) => {
+    try {
+        const { nom, prenom, email, telephone, adresse, ville, code_postal, pays, notes, userId } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        
+        if (!nom) {
+            return res.status(400).json({ error: "Client name is required" });
+        }
+        
+        const newClient = await db.query(
+            "INSERT INTO clients (nom, prenom, email, telephone, adresse, ville, code_postal, pays, notes, userid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
+            [nom, prenom, email, telephone, adresse, ville, code_postal, pays, notes, userId]
+        );
+        
+        res.status(201).json(newClient.rows[0]);
+    } catch (error) {
+        console.error("Error creating client:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Update a client
+app.put("/clients/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nom, prenom, email, telephone, adresse, ville, code_postal, pays, notes, userId } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        
+        // Check if client exists and belongs to user
+        const checkClient = await db.query("SELECT * FROM clients WHERE id = $1 AND userid = $2", [id, userId]);
+        
+        if (checkClient.rows.length === 0) {
+            return res.status(404).json({ error: "Client not found or you don't have permission to edit this client" });
+        }
+        
+        if (!nom) {
+            return res.status(400).json({ error: "Client name is required" });
+        }
+        
+        const updatedClient = await db.query(
+            "UPDATE clients SET nom = $1, prenom = $2, email = $3, telephone = $4, adresse = $5, ville = $6, code_postal = $7, pays = $8, notes = $9 WHERE id = $10 AND userid = $11 RETURNING *",
+            [nom, prenom, email, telephone, adresse, ville, code_postal, pays, notes, id, userId]
+        );
+        
+        res.json(updatedClient.rows[0]);
+    } catch (error) {
+        console.error("Error updating client:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Delete a client
+app.delete("/clients/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        
+        // Check if client exists and belongs to user
+        const checkClient = await db.query("SELECT * FROM clients WHERE id = $1 AND userid = $2", [id, userId]);
+        
+        if (checkClient.rows.length === 0) {
+            return res.status(404).json({ error: "Client not found or you don't have permission to delete this client" });
+        }
+        
+        // Check if client has associated orders
+        const checkOrders = await db.query("SELECT * FROM commande WHERE customer_name LIKE $1 AND userid = $2", [`%${checkClient.rows[0].nom}%`, userId]);
+        
+        if (checkOrders.rows.length > 0) {
+            return res.status(400).json({ error: "Cannot delete client with associated orders. Please delete the orders first or update them to use a different client." });
+        }
+        
+        await db.query("DELETE FROM clients WHERE id = $1 AND userid = $2", [id, userId]);
+        
+        res.json({ message: "Client deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting client:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+//Factures
+//get all Factures
+
+app.get("/facture", async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        let query = "SELECT * FROM facture";
+        let params = [];
+        
+        if (userId) {
+            query = "SELECT * FROM facture WHERE user_id = $1";
+            params = [userId];
+        }
+        
+        const allFactures = await db.query(query, params);
+        res.json(allFactures.rows);
+    } catch (error) {
+        console.error("Error getting factures:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+})
+
+// Get a single invoice by ID
+app.get("/facture/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        // First get the invoice details
+        const factureQuery = `
+            SELECT * FROM facture 
+            WHERE id = $1 ${userId ? 'AND user_id = $2' : ''}
+        `;
+        
+        const factureParams = userId ? [id, userId] : [id];
+        const factureResult = await db.query(factureQuery, factureParams);
+        
+        if (factureResult.rows.length === 0) {
+            return res.status(404).json({ error: "Invoice not found" });
+        }
+        
+        const invoice = factureResult.rows[0];
+        
+        // Then get the invoice items
+        const itemsQuery = `
+            SELECT * FROM facture_items 
+            WHERE facture_id = $1
+        `;
+        
+        const itemsResult = await db.query(itemsQuery, [id]);
+        
+        // Combine the invoice with its items
+        invoice.items = itemsResult.rows;
+        
+        res.json(invoice);
+    } catch (error) {
+        console.error("Error getting invoice:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Update an existing invoice
+app.put("/facture/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        // Extract invoice data from request body
+        const { 
+            customer_name, 
+            client_id, 
+            date, 
+            due_date, 
+            status, 
+            notes, 
+            total_amount, 
+            items,
+            user_id 
+        } = req.body;
+        
+        // Verify the invoice exists and belongs to the user
+        const checkQuery = `
+            SELECT * FROM facture 
+            WHERE id = $1 ${userId ? 'AND user_id = $2' : ''}
+        `;
+        
+        const checkParams = userId ? [id, userId] : [id];
+        const checkResult = await db.query(checkQuery, checkParams);
+        
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: "Invoice not found or you don't have permission to edit it" });
+        }
+        
+        // Start a transaction
+        await db.query('BEGIN');
+        
+        // Update the invoice in the facture table
+        const updateFactureQuery = `
+            UPDATE facture 
+            SET 
+                customer_name = $1, 
+                client_id = $2, 
+                date = $3, 
+                due_date = $4, 
+                status = $5, 
+                notes = $6, 
+                total_amount = $7
+            WHERE id = $8
+            RETURNING *
+        `;
+        
+        const factureValues = [
+            customer_name,
+            client_id,
+            date,
+            due_date || null,
+            status || 'Draft',
+            notes || '',
+            total_amount,
+            id
+        ];
+        
+        const updatedFacture = await db.query(updateFactureQuery, factureValues);
+        
+        // Delete existing invoice items
+        await db.query('DELETE FROM facture_items WHERE facture_id = $1', [id]);
+        
+        // Insert new invoice items
+        if (items && items.length > 0) {
+            const insertItemsQuery = `
+                INSERT INTO facture_items (
+                    facture_id, 
+                    description, 
+                    quantity, 
+                    unit_price, 
+                    amount
+                ) 
+                VALUES ($1, $2, $3, $4, $5)
+            `;
+            
+            for (const item of items) {
+                await db.query(insertItemsQuery, [
+                    id,
+                    item.description,
+                    item.quantity,
+                    item.unit_price,
+                    item.amount
+                ]);
+            }
+        }
+        
+        // Commit the transaction
+        await db.query('COMMIT');
+        
+        res.json({
+            message: "Invoice updated successfully",
+            invoice: updatedFacture.rows[0]
+        });
+    } catch (error) {
+        // Rollback in case of error
+        await db.query('ROLLBACK');
+        console.error("Error updating invoice:", error);
+        console.error("Error details:", error.stack);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Create a new invoice (facture)
+app.post("/facture", async (req, res) => {
+    try {
+        // Extract invoice data from request body
+        const { 
+            invoice_number, 
+            customer_name, 
+            client_id, 
+            date, 
+            due_date, 
+            status, 
+            notes, 
+            total_amount, 
+            items, 
+            user_id 
+        } = req.body;
+
+        // Start a transaction
+        await db.query('BEGIN');
+
+        // Insert the invoice into the facture table
+        const insertFactureQuery = `
+            INSERT INTO facture (
+                invoice_number, 
+                customer_name, 
+                client_id, 
+                date, 
+                due_date, 
+                status, 
+                notes, 
+                total_amount, 
+                user_id
+            ) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id
+        `;
+        
+        const factureValues = [
+            invoice_number,
+            customer_name,
+            client_id,
+            date,
+            due_date || null,
+            status || 'Draft',
+            notes || '',
+            total_amount,
+            user_id
+        ];
+
+        const factureResult = await db.query(insertFactureQuery, factureValues);
+        const factureId = factureResult.rows[0].id;
+
+        // If there are invoice items, insert them into a facture_items table
+        // Note: You may need to create this table if it doesn't exist
+        if (items && items.length > 0) {
+            for (const item of items) {
+                const insertItemQuery = `
+                    INSERT INTO facture_items (
+                        facture_id,
+                        description,
+                        quantity,
+                        unit_price,
+                        amount
+                    )
+                    VALUES ($1, $2, $3, $4, $5)
+                `;
+                
+                const itemValues = [
+                    factureId,
+                    item.description,
+                    item.quantity,
+                    item.unit_price,
+                    item.amount
+                ];
+                
+                await db.query(insertItemQuery, itemValues);
+            }
+        }
+
+        // Commit the transaction
+        await db.query('COMMIT');
+
+        res.status(201).json({ 
+            success: true, 
+            message: "Invoice created successfully", 
+            id: factureId 
+        });
+    } catch (error) {
+        // Rollback in case of error
+        await db.query('ROLLBACK');
+        console.error("Error creating invoice:", error);
+        res.status(500).json({ error: "Failed to create invoice" });
+    }
+});
+
+// Delete an invoice
+app.delete("/facture/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+
+        // First delete related items from facture_items table
+        await db.query("DELETE FROM facture_items WHERE facture_id = $1", [id]);
+
+        // Then delete the invoice itself, ensuring it belongs to the user
+        const deleteQuery = "DELETE FROM facture WHERE id = $1 AND user_id = $2";
+        const result = await db.query(deleteQuery, [id, userId]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Invoice not found or you don't have permission to delete it" });
+        }
+
+        res.json({ success: true, message: "Invoice deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting invoice:", error);
+        res.status(500).json({ error: "Failed to delete invoice" });
+    }
+});
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
