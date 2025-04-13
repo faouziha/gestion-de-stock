@@ -1,11 +1,21 @@
 {
-  "homepage": "https://faouziha.github.io/gestion-de-stock",
+  "name": "gestion-de-stock",
+  "version": "1.0.0",
+  "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "build": "cd Front-end/vite-project && npm install && npm run build"
+  },
   "devDependencies": {
     "gh-pages": "^6.3.0"
   },
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "build": "react-scripts build"
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.3"
   }
 }
