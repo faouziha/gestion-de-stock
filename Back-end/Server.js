@@ -3,15 +3,34 @@ const cors = require("cors");
 const pg = require("pg");
 require('dotenv').config();
 
-const db = new pg.Client({
+// Create a database connection pool instead of a single client
+const pool = new pg.Pool({
     user: process.env.USER_NAME,
     host: process.env.DATABASE_HOST,
     database: process.env.DATABASE_NAME,
     password: process.env.USER_PASSWORD,
-    port: process.env.DATABASE_PORT
+    port: process.env.DATABASE_PORT,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 5000, // timeout after 5 seconds
+    max: 20 // set pool max size to 20
 });
 
-db.connect();
+// Test database connection
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.stack);
+    } else {
+        console.log('Connected to database successfully');
+        release(); // release client back to pool
+    }
+});
+
+// Use pool.query instead of db.query throughout the application
+const db = {
+    query: (text, params, callback) => {
+        return pool.query(text, params, callback);
+    }
+};
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -1470,6 +1489,24 @@ app.delete("/facture/:id", async (req, res) => {
     }
 });
 
+// Add a fallback route handler for any undefined routes
+app.use((req, res) => {
+    res.status(404).json({ error: "Route not found", path: req.path });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({ 
+        error: "Internal Server Error", 
+        message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message 
+    });
+});
+
+// Start the server
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+
+// For Vercel serverless functions
+module.exports = app;
