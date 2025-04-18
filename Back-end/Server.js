@@ -336,20 +336,6 @@ app.get("/users", async (req, res) => {
 app.delete("/users/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.query.userId;
-        
-        // Check if the requesting user is an admin
-        const checkAdminQuery = "SELECT role FROM users WHERE id = $1";
-        const adminCheck = await db.query(checkAdminQuery, [userId]);
-        
-        if (adminCheck.rows.length === 0 || adminCheck.rows[0].role !== 'admin') {
-            return res.status(403).json({ error: "Unauthorized access" });
-        }
-        
-        // Prevent deleting your own account
-        if (parseInt(id) === parseInt(userId)) {
-            return res.status(400).json({ error: "You cannot delete your own account" });
-        }
         
         // Delete the user
         const deleteQuery = "DELETE FROM users WHERE id = $1 RETURNING *";
