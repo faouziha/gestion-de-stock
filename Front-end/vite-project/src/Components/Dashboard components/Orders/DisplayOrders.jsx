@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import { FaEdit, FaTrash, FaEye, FaPlus } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaEye, FaPlus, FaSearch } from 'react-icons/fa'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
 import { useNavigate } from 'react-router-dom'
@@ -9,6 +9,7 @@ export default function DisplayOrders() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const { user } = useAuth()
   const { darkMode } = useTheme()
   const navigate = useNavigate()
@@ -72,13 +73,31 @@ export default function DisplayOrders() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
           <h1 className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Orders</h1>
-          <button
-            onClick={() => navigate('/orders/add')}
-            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center"
-          >
-            <FaPlus className="mr-2" />
-            Add New Order
-          </button>
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 rounded-md border ${
+                  darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                }`}
+              />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaSearch />
+              </div>
+            </div>
+            
+            <button
+              onClick={() => navigate('/orders/add')}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center"
+            >
+              <FaPlus className="mr-2" />
+              Add New Order
+            </button>
+          </div>
         </div>
         
         {loading && (
@@ -102,7 +121,22 @@ export default function DisplayOrders() {
           </div>
         )}
         
-        {!loading && orders.length === 0 && !error && (
+        {/* Filter orders based on search term */}
+        {(() => {
+          const filteredOrders = orders.filter(order => {
+            const searchFields = [
+              order.nom_produit,
+              order.customer_name,
+              order.status,
+              order.id?.toString(),
+              order.quantite?.toString()
+            ].filter(Boolean).join(' ').toLowerCase();
+            
+            return searchFields.includes(searchTerm.toLowerCase());
+          });
+          
+          if (!loading && filteredOrders.length === 0 && !error) {
+            return (
           <div className={`${darkMode ? 'bg-gray-700' : 'bg-white'} rounded-lg shadow-md p-6 sm:p-8 text-center`}>
             <svg xmlns="http://www.w3.org/2000/svg" className={`h-12 sm:h-16 w-12 sm:w-16 ${darkMode ? 'text-gray-500' : 'text-gray-400'} mx-auto mb-4`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -117,9 +151,27 @@ export default function DisplayOrders() {
               Create Your First Order
             </button>
           </div>
-        )}
+        );
+        }
+        return null;
+      })()}
+      
+      {/* Display filtered orders */}
+      {(() => {
+        const filteredOrders = orders.filter(order => {
+          const searchFields = [
+            order.nom_produit,
+            order.customer_name,
+            order.status,
+            order.id?.toString(),
+            order.quantite?.toString()
+          ].filter(Boolean).join(' ').toLowerCase();
+          
+          return searchFields.includes(searchTerm.toLowerCase());
+        });
         
-        {orders.length > 0 && (
+        if (filteredOrders.length > 0) {
+          return (
           <>
             {/* Desktop view - Table */}
             <div className={`hidden md:block overflow-x-auto ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-md rounded-lg`}>
@@ -150,7 +202,7 @@ export default function DisplayOrders() {
                   </tr>
                 </thead>
                 <tbody className={`${darkMode ? 'bg-gray-700 divide-y divide-gray-600' : 'bg-white divide-y divide-gray-200'}`}>
-                  {orders.map(order => (
+                  {filteredOrders.map(order => (
                     <tr key={order.id} className={`${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}`}>
                       <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'} text-center`}>
                         #{order.id}
@@ -212,7 +264,7 @@ export default function DisplayOrders() {
 
             {/* Mobile view - Cards */}
             <div className="md:hidden space-y-4">
-              {orders.map(order => (
+              {filteredOrders.map(order => (
                 <div key={order.id} className={`${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg shadow-sm p-4`}>
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -266,7 +318,10 @@ export default function DisplayOrders() {
               ))}
             </div>
           </>
-        )}
+        );
+        }
+        return null;
+      })()}
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const pg = require("pg");
+const bcrypt = require("bcrypt");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
@@ -45,8 +46,70 @@ app.get("/", (req, res) => {
     res.json("Hello World!");
 });
 
-// Route to add status column to commande table if it doesn't exist
-app.get("/setup/add-status-column", async (req, res) => {
+// Authentication middleware to verify admin role
+const authenticateAdmin = async (req, res, next) => {
+    try {
+        const userId = req.query.userId || req.body.userId;
+        
+        if (!userId) {
+            return res.status(401).json({ error: "Authentication required. Please provide userId." });
+        }
+        
+        // Check if the user exists and is an admin
+        const checkAdminQuery = "SELECT role FROM users WHERE id = $1";
+        const adminCheck = await db.query(checkAdminQuery, [userId]);
+        
+        if (adminCheck.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        if (adminCheck.rows[0].role !== 'admin') {
+            return res.status(403).json({ error: "Unauthorized. Admin privileges required." });
+        }
+        
+        // User is authenticated as admin, proceed
+        next();
+    } catch (error) {
+        console.error("Authentication error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+// Endpoint to update a user's role to admin (protected, admin only)
+app.get("/setup/make-admin", authenticateAdmin, async (req, res) => {
+    try {
+        const { email } = req.query;
+        
+        if (!email) {
+            return res.status(400).json({ error: "Email parameter is required" });
+        }
+        
+        // Update the user's role to admin
+        const updateRoleQuery = `
+            UPDATE users
+            SET role = 'admin'
+            WHERE email = $1
+            RETURNING id, name, last_name, email, role
+        `;
+        
+        const result = await db.query(updateRoleQuery, [email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        res.status(200).json({
+            message: "User role updated to admin successfully",
+            user: result.rows[0]
+        });
+    } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Route to add status column to commande table if it doesn't exist (protected, admin only)
+app.get("/setup/add-status-column", authenticateAdmin, async (req, res) => {
     try {
         // Check if the status column already exists
         const checkColumnQuery = `
@@ -73,8 +136,8 @@ app.get("/setup/add-status-column", async (req, res) => {
     }
 });
 
-// Route to create facture and facture_items tables if they don't exist
-app.get("/setup/create-facture-tables", async (req, res) => {
+// Route to create facture and facture_items tables if they don't exist (protected, admin only)
+app.get("/setup/create-facture-tables", authenticateAdmin, async (req, res) => {
     try {
         // Check if the facture table exists
         const checkFactureTableQuery = `
@@ -171,13 +234,21 @@ app.post("/login", (req, res) => {
         }
 
         const user = result.rows[0];
-        if (user.password !== password) {
-            return res.status(401).json({ error: "Invalid email or password" });
-        }
-
-        res.status(200).json({
-            message: "Login successful",
-            user
+        // Compare password with hashed password in database
+        bcrypt.compare(password, user.password, (err, isMatch) => {
+            if (err) {
+                console.error("Error comparing passwords:", err);
+                return res.status(500).json({ error: "Internal Server Error" });
+            }
+            
+            if (!isMatch) {
+                return res.status(401).json({ error: "Invalid email or password" });
+            }
+            
+            res.status(200).json({
+                message: "Login successful",
+                user
+            });
         });
     });
 }) 
@@ -204,23 +275,31 @@ app.post("/register", (req, res) => {
                 return res.status(409).json({ error: "User with this email already exists" });
             }
             
-            // Insert new user into database with plain password
-            const insertUserQuery = 
-                "INSERT INTO users (name, last_name, email, password) VALUES ($1, $2, $3, $4) RETURNING *";
-            const values = [name, lastName, email, password];
-            
-            db.query(insertUserQuery, values, (err, result) => {
+            // Hash the password with bcrypt before storing
+            bcrypt.hash(password, 10, (err, hashedPassword) => {
                 if (err) {
-                    console.error("Error inserting user:", err);
+                    console.error("Error hashing password:", err);
                     return res.status(500).json({ error: "Internal Server Error" });
                 }
                 
-                // Return the newly created user
-                const newUser = result.rows[0];
+                // Insert new user into database with hashed password
+                const insertUserQuery = 
+                    "INSERT INTO users (name, last_name, email, password) VALUES ($1, $2, $3, $4) RETURNING *";
+                const values = [name, lastName, email, hashedPassword];
                 
-                res.status(201).json({
-                    message: "User registered successfully",
-                    user: newUser
+                db.query(insertUserQuery, values, (err, result) => {
+                    if (err) {
+                        console.error("Error inserting user:", err);
+                        return res.status(500).json({ error: "Internal Server Error" });
+                    }
+                    
+                    // Return the newly created user
+                    const newUser = result.rows[0];
+                    
+                    res.status(201).json({
+                        message: "User registered successfully",
+                        user: newUser
+                    });
                 });
             });
         });
@@ -265,9 +344,15 @@ app.put("/users/:id", async (req, res) => {
                 return res.status(400).json({ error: "Current password is required to set a new password" });
             }
             
-            // Verify current password
-            if (currentPassword !== user.password) {
-                return res.status(401).json({ error: "Current password is incorrect" });
+            // Verify current password against hashed password in database
+            try {
+                const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+                if (!passwordMatch) {
+                    return res.status(401).json({ error: "Current password is incorrect" });
+                }
+            } catch (err) {
+                console.error("Error comparing passwords:", err);
+                return res.status(500).json({ error: "Internal Server Error" });
             }
         }
         
@@ -276,13 +361,21 @@ app.put("/users/:id", async (req, res) => {
         let values;
         
         if (password && password.trim() !== '') {
-            updateUserQuery = `
-                UPDATE users 
-                SET name = $1, last_name = $2, email = $3, phone = $4, address = $5, password = $6
-                WHERE id = $7 
-                RETURNING *
-            `;
-            values = [name, lastName, email, phone || null, address || null, password, id];
+            // Hash the new password
+            try {
+                const hashedPassword = await bcrypt.hash(password, 10);
+                
+                updateUserQuery = `
+                    UPDATE users 
+                    SET name = $1, last_name = $2, email = $3, phone = $4, address = $5, password = $6
+                    WHERE id = $7 
+                    RETURNING *
+                `;
+                values = [name, lastName, email, phone || null, address || null, hashedPassword, id];
+            } catch (err) {
+                console.error("Error hashing password:", err);
+                return res.status(500).json({ error: "Internal Server Error" });
+            }
         } else {
             updateUserQuery = `
                 UPDATE users 
@@ -333,6 +426,46 @@ app.get("/users", async (req, res) => {
 });
 
 // Delete a user (admin only)
+// Endpoint to update a user's role
+app.put("/users/:id/role", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role, userId } = req.body;
+        
+        // Verify the requester is an admin
+        const adminCheckQuery = `
+            SELECT role FROM users WHERE id = $1
+        `;
+        const adminResult = await db.query(adminCheckQuery, [userId]);
+        
+        if (adminResult.rows.length === 0 || adminResult.rows[0].role !== 'admin') {
+            return res.status(403).json({ error: "Unauthorized. Only admins can update user roles." });
+        }
+        
+        // Update the user's role
+        const updateRoleQuery = `
+            UPDATE users
+            SET role = $1
+            WHERE id = $2
+            RETURNING id, name, last_name, email, role
+        `;
+        
+        const result = await db.query(updateRoleQuery, [role, id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        res.status(200).json({
+            message: "User role updated successfully",
+            user: result.rows[0]
+        });
+    } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
 app.delete("/users/:id", async (req, res) => {
     try {
         const { id } = req.params;

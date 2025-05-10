@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaEdit, FaTrash, FaEye, FaPlus, FaFileInvoice } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaEye, FaPlus, FaFileInvoice, FaSearch } from 'react-icons/fa'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
 
@@ -11,6 +11,7 @@ export default function Facture() {
     const [factures, setFactures] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [searchTerm, setSearchTerm] = useState('')
     const navigate = useNavigate()
     
     useEffect(() => {
@@ -64,13 +65,31 @@ export default function Facture() {
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
                     <h1 className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Invoices</h1>
-                    <Link 
-                        to="/factures/add" 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center w-full sm:w-auto justify-center sm:justify-start"
-                    >
-                        <FaPlus className="mr-2" />
-                        <span>Create New Invoice</span>
-                    </Link>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-64">
+                            <input
+                                type="text"
+                                placeholder="Search invoices..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className={`w-full pl-10 pr-4 py-2 rounded-md border ${
+                                    darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                                }`}
+                            />
+                            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <FaSearch />
+                            </div>
+                        </div>
+                        
+                        <Link 
+                            to="/factures/add" 
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center w-full sm:w-auto justify-center sm:justify-start"
+                        >
+                            <FaPlus className="mr-2" />
+                            <span>Create New Invoice</span>
+                        </Link>
+                    </div>
                 </div>
                 
                 {loading && (
@@ -94,7 +113,22 @@ export default function Facture() {
                     </div>
                 )}
                 
-                {!loading && factures.length === 0 && !error && (
+                {/* Filter invoices based on search term */}
+                {(() => {
+                    const filteredFactures = factures.filter(facture => {
+                        const searchFields = [
+                            facture.customer_name,
+                            facture.invoice_number?.toString(),
+                            facture.id?.toString(),
+                            facture.status,
+                            facture.total_amount?.toString()
+                        ].filter(Boolean).join(' ').toLowerCase();
+                        
+                        return searchFields.includes(searchTerm.toLowerCase());
+                    });
+                    
+                    if (!loading && filteredFactures.length === 0 && !error) {
+                        return (
                     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-4 sm:p-8 text-center transition-colors`}>
                         <FaFileInvoice className={`h-12 w-12 sm:h-16 sm:w-16 ${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
                         <h3 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>No Invoices Found</h3>
@@ -107,9 +141,27 @@ export default function Facture() {
                             Create Your First Invoice
                         </Link>
                     </div>
-                )}
+                    );
+                    }
+                    return null;
+                })()}
                 
-                {factures.length > 0 && (
+                {/* Display filtered invoices */}
+                {(() => {
+                    const filteredFactures = factures.filter(facture => {
+                        const searchFields = [
+                            facture.customer_name,
+                            facture.invoice_number?.toString(),
+                            facture.id?.toString(),
+                            facture.status,
+                            facture.total_amount?.toString()
+                        ].filter(Boolean).join(' ').toLowerCase();
+                        
+                        return searchFields.includes(searchTerm.toLowerCase());
+                    });
+                    
+                    if (filteredFactures.length > 0) {
+                        return (
                     <div className={`overflow-x-auto ${darkMode ? 'bg-gray-900' : 'bg-white'} shadow-md rounded-lg transition-colors`}>
                         {/* Desktop Table View */}
                         <table className="min-w-full divide-y divide-gray-200 hidden md:table">
@@ -136,7 +188,7 @@ export default function Facture() {
                                 </tr>
                             </thead>
                             <tbody className={`${darkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} transition-colors`}>
-                                {factures.map(facture => (
+                                {filteredFactures.map(facture => (
                                     <tr key={facture.id} className={`${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                                             <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -265,7 +317,10 @@ export default function Facture() {
                             ))}
                         </div>
                     </div>
-                )}
+                    );
+                    }
+                    return null;
+                })()}            
             </div>
         </div>
     )

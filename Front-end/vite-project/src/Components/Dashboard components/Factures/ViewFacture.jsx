@@ -186,7 +186,7 @@ export default function ViewFacture() {
                         )}
                         <button
                             onClick={handlePrint}
-                            className={`bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center justify-center print-hide`}
+                            className={`bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center justify-center print-hide`}
                         >
                             <FaPrint className="mr-1 sm:mr-2" />
                             <span className="text-sm sm:text-base">Print</span>

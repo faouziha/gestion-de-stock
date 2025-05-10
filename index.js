@@ -1,7 +1,7 @@
-// This file serves as an entry point for Vercel deployment
+// This file serves as the main entry point for the application
 
 try {
-  // Set production environment for Vercel
+  // Set environment for production
   process.env.NODE_ENV = 'production';
   
   // Log environment variables (without sensitive info)

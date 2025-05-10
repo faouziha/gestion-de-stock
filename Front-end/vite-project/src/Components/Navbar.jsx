@@ -43,8 +43,8 @@ export default function Navbar() {
     }
   }, [])
 
-  // Check if user is admin
-  const isAdmin = user && user.email === 'fhaourigui1@gmail.com'
+  // Check if user is admin based on role
+  const isAdmin = user && user.role === 'admin'
 
   return (
     <>
