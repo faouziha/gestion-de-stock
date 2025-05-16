@@ -1608,6 +1608,201 @@ app.delete("/facture/:id", async (req, res) => {
     }
 });
 
+// Supplier Orders API Endpoints
+
+// Get all supplier orders
+app.get("/supplier-order", async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        let query = "SELECT * FROM supplier_order";
+        let params = [];
+        
+        // If userId is provided, filter by userId for security
+        if (userId) {
+            query += " WHERE userId = $1";
+            params.push(userId);
+        }
+        
+        query += " ORDER BY created_at DESC";
+        
+        const result = await db.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error fetching supplier orders:", error);
+        res.status(500).json({ error: "Failed to fetch supplier orders" });
+    }
+});
+
+// Get a specific supplier order by ID
+app.get("/supplier-order/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        let query = "SELECT * FROM supplier_order WHERE id = $1";
+        let params = [id];
+        
+        // If userId is provided, add it to the query for security
+        if (userId) {
+            query += " AND userId = $2";
+            params.push(userId);
+        }
+        
+        const result = await db.query(query, params);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Supplier order not found or you don't have permission to view it" });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error("Error fetching supplier order:", error);
+        res.status(500).json({ error: "Failed to fetch supplier order" });
+    }
+});
+
+// Create a new supplier order
+app.post("/supplier-order", async (req, res) => {
+    try {
+        const {
+            fournisseur_id,
+            supplier_name,
+            produit_id,
+            product_name,
+            quantity,
+            unit_price,
+            total_amount,
+            expected_delivery_date,
+            status,
+            notes,
+            userId
+        } = req.body;
+        
+        // Validate required fields
+        if (!fournisseur_id || !supplier_name || !produit_id || !product_name || !quantity || !unit_price || !total_amount || !userId) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        
+        const query = `
+            INSERT INTO supplier_order (
+                fournisseur_id, supplier_name, produit_id, product_name, 
+                quantity, unit_price, total_amount, expected_delivery_date, 
+                status, notes, userId
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *
+        `;
+        
+        const values = [
+            fournisseur_id,
+            supplier_name,
+            produit_id,
+            product_name,
+            quantity,
+            unit_price,
+            total_amount,
+            expected_delivery_date || null,
+            status || 'Pending',
+            notes || '',
+            userId
+        ];
+        
+        const result = await db.query(query, values);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error("Error creating supplier order:", error);
+        res.status(500).json({ error: "Failed to create supplier order", details: error.message });
+    }
+});
+
+// Update a supplier order
+app.put("/supplier-order/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            fournisseur_id,
+            supplier_name,
+            produit_id,
+            product_name,
+            quantity,
+            unit_price,
+            total_amount,
+            expected_delivery_date,
+            status,
+            notes,
+            userId
+        } = req.body;
+        
+        // Check if the order exists and belongs to the user
+        const checkQuery = "SELECT * FROM supplier_order WHERE id = $1 AND userId = $2";
+        const checkResult = await db.query(checkQuery, [id, userId]);
+        
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: "Supplier order not found or you don't have permission to update it" });
+        }
+        
+        const updateQuery = `
+            UPDATE supplier_order SET
+                fournisseur_id = $1,
+                supplier_name = $2,
+                produit_id = $3,
+                product_name = $4,
+                quantity = $5,
+                unit_price = $6,
+                total_amount = $7,
+                expected_delivery_date = $8,
+                status = $9,
+                notes = $10
+            WHERE id = $11 AND userId = $12
+            RETURNING *
+        `;
+        
+        const values = [
+            fournisseur_id,
+            supplier_name,
+            produit_id,
+            product_name,
+            quantity,
+            unit_price,
+            total_amount,
+            expected_delivery_date || null,
+            status || 'Pending',
+            notes || '',
+            id,
+            userId
+        ];
+        
+        const result = await db.query(updateQuery, values);
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error("Error updating supplier order:", error);
+        res.status(500).json({ error: "Failed to update supplier order", details: error.message });
+    }
+});
+
+// Delete a supplier order
+app.delete("/supplier-order/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        // Check if the order exists and belongs to the user
+        const checkQuery = "SELECT * FROM supplier_order WHERE id = $1 AND userId = $2";
+        const checkResult = await db.query(checkQuery, [id, userId]);
+        
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: "Supplier order not found or you don't have permission to delete it" });
+        }
+        
+        const deleteQuery = "DELETE FROM supplier_order WHERE id = $1 AND userId = $2";
+        await db.query(deleteQuery, [id, userId]);
+        
+        res.json({ success: true, message: "Supplier order deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting supplier order:", error);
+        res.status(500).json({ error: "Failed to delete supplier order" });
+    }
+});
+
 // Add a fallback route handler for any undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: "Route not found", path: req.path });

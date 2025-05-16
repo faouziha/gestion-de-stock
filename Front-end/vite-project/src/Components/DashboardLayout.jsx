@@ -11,6 +11,7 @@ export default function DashboardLayout() {
   const [productsMenuOpen, setProductsMenuOpen] = useState(true); 
   const [ordersMenuOpen, setOrdersMenuOpen] = useState(false);
   const [suppliersMenuOpen, setSuppliersMenuOpen] = useState(false);
+  const [supplierOrdersMenuOpen, setSupplierOrdersMenuOpen] = useState(false);
   const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
   const [facturesMenuOpen, setFacturesMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,11 +21,14 @@ export default function DashboardLayout() {
     if (location.pathname.includes('product') || location.pathname.includes('products')) {
       setProductsMenuOpen(true);
     }
-    if (location.pathname.includes('order') || location.pathname.includes('orders')) {
+    if (location.pathname.includes('/order') || location.pathname.includes('/orders')) {
       setOrdersMenuOpen(true);
     }
-    if (location.pathname.includes('supplier') || location.pathname.includes('suppliers')) {
+    if (location.pathname.includes('/supplier') || location.pathname.includes('/suppliers') && !location.pathname.includes('supplier-orders')) {
       setSuppliersMenuOpen(true);
+    }
+    if (location.pathname.includes('supplier-orders')) {
+      setSupplierOrdersMenuOpen(true);
     }
     if (location.pathname.includes('client') || location.pathname.includes('clients')) {
       setClientsMenuOpen(true);
@@ -158,14 +162,14 @@ export default function DashboardLayout() {
             <button 
               onClick={() => setOrdersMenuOpen(!ordersMenuOpen)}
               className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname.includes('order') || location.pathname.includes('orders')
+                location.pathname.includes('/order') || location.pathname.includes('/orders')
                   ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
                   : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
               }`}
             >
               <div className="flex items-center">
                 <FaShoppingCart className="mr-3" />
-                <span>Orders</span>
+                <span>Client Orders</span>
               </div>
               {ordersMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
             </button>
@@ -195,6 +199,53 @@ export default function DashboardLayout() {
                 >
                   <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
                   Add New Order
+                </Link>
+              </div>
+            )}
+          </div>
+          
+          {/* Supplier Orders with dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setSupplierOrdersMenuOpen(!supplierOrdersMenuOpen)}
+              className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 ${
+                location.pathname.includes('supplier-orders')
+                  ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
+                  : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+              }`}
+            >
+              <div className="flex items-center">
+                <FaShoppingCart className="mr-3" />
+                <span>Supplier Orders</span>
+              </div>
+              {supplierOrdersMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
+            </button>
+            
+            {supplierOrdersMenuOpen && (
+              <div className="ml-4 mt-2 flex flex-col space-y-2 rounded-lg overflow-hidden">
+                <Link 
+                  to="/supplier-orders" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/supplier-orders' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Display Supplier Orders
+                </Link>
+                <Link 
+                  to="/add-supplier-order" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/add-supplier-order' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Add New Supplier Order
                 </Link>
               </div>
             )}
