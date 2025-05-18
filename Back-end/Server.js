@@ -3,6 +3,7 @@ const cors = require("cors");
 const pg = require("pg");
 const bcrypt = require("bcrypt");
 const multiClientOrdersRouter = require("./MultiClientOrders");
+const clientOrdersRouter = require("./clientorders_routes");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
@@ -42,6 +43,9 @@ app.use(cors());
 
 // Register the multi-client-order router
 app.use('/multi-client-order', multiClientOrdersRouter);
+
+// Register the client orders router
+app.use(clientOrdersRouter);
 
 // Serve static files from the uploads directory
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -762,7 +766,9 @@ app.get("/commande/:id", async (req, res) => {
 
 app.post("/commande", async (req, res) => {
     try {
-        const { produit_id, nom_produit, quantite, date_commande, userId, customer_name, status } = req.body;
+        const { produit_id, nom_produit, quantite, date_commande, userId, customer_name, status, unit_price, total_amount } = req.body;
+        
+        console.log("Order creation request body:", req.body);
         
         // Check available stock before creating the order
         const stockInfo = await getAvailableStock(produit_id);
@@ -807,6 +813,22 @@ app.post("/commande", async (req, res) => {
         placeholders += ", $" + valueIndex++;
         values.push(status || "Pending");
         
+        // Add unit_price field if provided
+        if (unit_price !== undefined) {
+            query += ", unit_price";
+            placeholders += ", $" + valueIndex++;
+            values.push(parseFloat(unit_price) || 0);
+            console.log("Adding unit_price to query:", parseFloat(unit_price) || 0);
+        }
+        
+        // Add total_amount field if provided
+        if (total_amount !== undefined) {
+            query += ", total_amount";
+            placeholders += ", $" + valueIndex++;
+            values.push(parseFloat(total_amount) || 0);
+            console.log("Adding total_amount to query:", parseFloat(total_amount) || 0);
+        }
+        
         // Complete the query
         query += ") VALUES (" + placeholders + ") RETURNING *";
         
@@ -831,7 +853,9 @@ app.post("/commande", async (req, res) => {
 app.put("/commande/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { produit_id, nom_produit, quantite, date_commande, customer_name, userId, status } = req.body;
+        const { produit_id, nom_produit, quantite, date_commande, customer_name, userId, status, unit_price, total_amount } = req.body;
+        
+        console.log("Order update request with price details:", { unit_price, total_amount });
         
         console.log("Update order request received:", { id, userId, status });
         
@@ -931,6 +955,20 @@ app.put("/commande/:id", async (req, res) => {
             values.push(status);
         }
         
+        // Add unit_price field if provided
+        if (unit_price !== undefined) {
+            updateFields.push(` unit_price = $${paramIndex++}`);
+            values.push(parseFloat(unit_price) || 0);
+            console.log("Adding unit_price to update query:", parseFloat(unit_price) || 0);
+        }
+        
+        // Add total_amount field if provided
+        if (total_amount !== undefined) {
+            updateFields.push(` total_amount = $${paramIndex++}`);
+            values.push(parseFloat(total_amount) || 0);
+            console.log("Adding total_amount to update query:", parseFloat(total_amount) || 0);
+        }
+        
         // Ensure userId is preserved
         if (userId) {
             updateFields.push(` userId = $${paramIndex++}`);
@@ -955,6 +993,305 @@ app.put("/commande/:id", async (req, res) => {
         res.json(updatedCommande.rows[0]);
     } catch (error) {
         console.error("Error updating commande:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+});
+
+// Update an order
+app.put("/commande/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { produit_id, nom_produit, quantite, date_commande, customer_name, status, is_parent } = req.body;
+        const userId = req.query.userId;
+
+        // Validate required fields
+        if (!id || !userId) {
+            return res.status(400).json({ error: "Order ID and userId are required" });
+        }
+
+        // Check if order exists and belongs to the user
+        const orderResult = await db.query("SELECT * FROM commande WHERE id = $1 AND userId = $2", [id, userId]);
+        if (orderResult.rows.length === 0) {
+            return res.status(404).json({ error: "Order not found or not authorized" });
+        }
+
+        const existingOrder = orderResult.rows[0];
+        
+        // Start building the update query
+        let updateFields = [];
+        let values = [];
+        let paramIndex = 1;
+
+        // Only update fields that are provided and handle type conversions
+        if (produit_id !== undefined) {
+            updateFields.push(`produit_id = $${paramIndex}`);
+            values.push(parseInt(produit_id));
+            paramIndex++;
+        }
+
+        if (nom_produit !== undefined) {
+            updateFields.push(`nom_produit = $${paramIndex}`);
+            values.push(nom_produit);
+            paramIndex++;
+        }
+
+        if (quantite !== undefined) {
+            updateFields.push(`quantite = $${paramIndex}`);
+            values.push(parseInt(quantite));
+            paramIndex++;
+        }
+
+        if (date_commande !== undefined) {
+            updateFields.push(`date_commande = $${paramIndex}`);
+            values.push(date_commande);
+            paramIndex++;
+        }
+
+        if (customer_name !== undefined) {
+            updateFields.push(`customer_name = $${paramIndex}`);
+            values.push(customer_name);
+            paramIndex++;
+        }
+
+        if (status !== undefined) {
+            updateFields.push(`status = $${paramIndex}`);
+            values.push(status);
+            paramIndex++;
+        }
+
+        // Add the userId and id to the values array for the WHERE clause
+        values.push(userId);
+        values.push(id);
+
+        // If there are no fields to update, return success without making a query
+        if (updateFields.length === 0) {
+            return res.json({ message: "No fields to update" });
+        }
+
+        // Build and execute the UPDATE query
+        const updateQuery = `
+            UPDATE commande 
+            SET ${updateFields.join(", ")} 
+            WHERE userId = $${paramIndex} AND id = $${paramIndex + 1} 
+            RETURNING *
+        `;
+
+        const result = await db.query(updateQuery, values);
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error("Error updating order:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Update a multi-product order (parent order and its child orders)
+app.put("/multi-client-order/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { orderData, items } = req.body;
+        const userId = req.query.userId;
+
+        if (!id || !userId) {
+            return res.status(400).json({ error: "Order ID and userId are required" });
+        }
+
+        // Verify this is a parent order
+        const orderResult = await db.query(
+            "SELECT * FROM commande WHERE id = $1 AND userId = $2 AND is_parent = true", 
+            [id, userId]
+        );
+
+        if (orderResult.rows.length === 0) {
+            return res.status(404).json({ error: "Parent order not found or not authorized" });
+        }
+
+        const parentOrder = orderResult.rows[0];
+        
+        // Begin transaction
+        await db.query('BEGIN');
+        
+        try {
+            // 1. Update the parent order
+            let updateFields = [];
+            let values = [];
+            let paramIndex = 1;
+            
+            // Fields that can be updated for the parent order
+            const updateableFields = ['customer_name', 'date_commande', 'status'];
+            
+            for (const field of updateableFields) {
+                if (orderData[field] !== undefined) {
+                    updateFields.push(`${field} = $${paramIndex}`);
+                    values.push(orderData[field]);
+                    paramIndex++;
+                }
+            }
+            
+            if (updateFields.length > 0) {
+                // Add conditions to WHERE clause
+                values.push(userId);
+                values.push(id);
+                
+                const updateQuery = `
+                    UPDATE commande 
+                    SET ${updateFields.join(", ")} 
+                    WHERE userId = $${paramIndex} AND id = $${paramIndex + 1} 
+                    RETURNING *
+                `;
+                
+                const updatedParentResult = await db.query(updateQuery, values);
+                console.log('Parent order updated:', updatedParentResult.rows[0]);
+            }
+            
+            // 2. Get existing child orders
+            const existingChildOrdersResult = await db.query(
+                "SELECT * FROM commande WHERE parent_order_id = $1 ORDER BY id", 
+                [id]
+            );
+            const existingChildOrders = existingChildOrdersResult.rows;
+            console.log(`Found ${existingChildOrders.length} existing child orders`);
+            
+            // 3. For each item in the request:
+            //    - If it has an id that matches an existing child order, update it
+            //    - If it's new (no id), create a new child order
+            for (const item of items) {
+                if (item.id) {
+                    // This is an existing child order - update it
+                    let childUpdateFields = [];
+                    let childValues = [];
+                    let childParamIndex = 1;
+                    
+                    // Fields that can be updated for child orders
+                    const childUpdateableFields = [
+                        { name: 'produit_id', convert: val => parseInt(val) },
+                        { name: 'nom_produit', convert: val => val },
+                        { name: 'quantite', convert: val => parseInt(val) },
+                        { name: 'unit_price', convert: val => parseFloat(val) },
+                        { name: 'total_amount', convert: val => parseFloat(val) }
+                    ];
+                    
+                    for (const field of childUpdateableFields) {
+                        if (item[field.name] !== undefined) {
+                            childUpdateFields.push(`${field.name} = $${childParamIndex}`);
+                            childValues.push(field.convert(item[field.name]));
+                            childParamIndex++;
+                        }
+                    }
+                    
+                    // Update status and date if parent order changed
+                    if (orderData.status) {
+                        childUpdateFields.push(`status = $${childParamIndex}`);
+                        childValues.push(orderData.status);
+                        childParamIndex++;
+                    }
+                    
+                    if (orderData.date_commande) {
+                        childUpdateFields.push(`date_commande = $${childParamIndex}`);
+                        childValues.push(orderData.date_commande);
+                        childParamIndex++;
+                    }
+                    
+                    if (childUpdateFields.length > 0) {
+                        // Add conditions to WHERE clause
+                        childValues.push(item.id);
+                        childValues.push(id); // parent_order_id
+                        
+                        const childUpdateQuery = `
+                            UPDATE commande 
+                            SET ${childUpdateFields.join(", ")} 
+                            WHERE id = $${childParamIndex} AND parent_order_id = $${childParamIndex + 1} 
+                            RETURNING *
+                        `;
+                        
+                        const updatedChildResult = await db.query(childUpdateQuery, childValues);
+                        console.log(`Updated child order #${item.id}:`, updatedChildResult.rows[0]);
+                    }
+                } else {
+                    // This is a new child order - create it
+                    console.log('Creating new child order for product:', item.nom_produit);
+                    
+                    // Format the child order data
+                    const productId = parseInt(item.produit_id);
+                    const productName = item.nom_produit?.trim() || 'Unknown Product';
+                    const quantity = parseInt(item.quantite) || 1;
+                    const unitPrice = parseFloat(item.unit_price) || 0;
+                    const totalAmount = parseFloat(item.total_amount) || (unitPrice * quantity);
+                    
+                    const newChildQuery = `
+                        INSERT INTO commande (
+                            produit_id, nom_produit, quantite, date_commande, 
+                            customer_name, userId, status, parent_order_id, 
+                            is_parent, unit_price, total_amount
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                        RETURNING *
+                    `;
+                    
+                    const newChildValues = [
+                        productId,
+                        productName,
+                        quantity,
+                        orderData.date_commande || parentOrder.date_commande,
+                        orderData.customer_name || parentOrder.customer_name,
+                        userId,
+                        orderData.status || parentOrder.status,
+                        id, // parent_order_id
+                        false, // is_parent
+                        unitPrice,
+                        totalAmount
+                    ];
+                    
+                    const newChildResult = await db.query(newChildQuery, newChildValues);
+                    console.log('Created new child order:', newChildResult.rows[0]);
+                }
+            }
+            
+            // 4. If any existing child orders are not in the updated items list, delete them
+            if (existingChildOrders.length > 0) {
+                const updatedItemIds = items
+                    .filter(item => item.id) // Only consider items with IDs
+                    .map(item => parseInt(item.id));
+                
+                const childOrdersToDelete = existingChildOrders
+                    .filter(child => !updatedItemIds.includes(child.id))
+                    .map(child => child.id);
+                
+                if (childOrdersToDelete.length > 0) {
+                    console.log(`Deleting ${childOrdersToDelete.length} removed child orders:`, childOrdersToDelete);
+                    
+                    const deleteQuery = `
+                        DELETE FROM commande 
+                        WHERE id = ANY($1) AND parent_order_id = $2
+                    `;
+                    
+                    await db.query(deleteQuery, [childOrdersToDelete, id]);
+                }
+            }
+            
+            // Commit transaction
+            await db.query('COMMIT');
+            
+            // Fetch the updated parent order with all its child orders
+            const result = await db.query(
+                "SELECT * FROM commande WHERE id = $1", 
+                [id]
+            );
+            
+            const childOrdersResult = await db.query(
+                "SELECT * FROM commande WHERE parent_order_id = $1 ORDER BY id", 
+                [id]
+            );
+            
+            const updatedOrder = result.rows[0];
+            updatedOrder.childOrders = childOrdersResult.rows;
+            
+            res.json(updatedOrder);
+        } catch (error) {
+            // Rollback transaction on error
+            await db.query('ROLLBACK');
+            throw error;
+        }
+    } catch (error) {
+        console.error("Error updating multi-product order:", error);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 });
