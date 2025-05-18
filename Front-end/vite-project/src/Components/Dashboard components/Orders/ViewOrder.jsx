@@ -90,6 +90,57 @@ export default function ViewOrder() {
     document.head.removeChild(style);
   };
 
+  // State for child orders if not included with parent
+  const [childOrders, setChildOrders] = useState([])
+  
+  // Function to fetch child orders if they're not included with the parent
+  const fetchChildOrders = async (parentId) => {
+    try {
+      // Fetch child orders where parent_order_id = parentId
+      const response = await axios.get(`http://localhost:3000/commande/?parent_order_id=${parentId}&userId=${user.id}`)
+      console.log('Child orders fetched separately:', response.data)
+      
+      // Verify that we have the expected child order data
+      if (response.data && response.data.length > 0) {
+        console.log('Sample child order:', response.data[0])
+        
+        // Filter to only include valid child orders with all required fields and matching parent_order_id
+        const validOrders = response.data.filter(order => {
+          return (
+            // Must have all required product information
+            order.produit_id && 
+            order.nom_produit && 
+            order.quantite && 
+            order.unit_price &&
+            // Must have the correct parent_order_id matching the requested parentId
+            order.parent_order_id === parseInt(parentId) &&
+            // Must NOT be a parent order itself
+            order.is_parent === false
+          )
+        })
+        
+        // Log info about missing fields
+        if (validOrders.length < response.data.length) {
+          console.warn(`Found ${response.data.length} child orders, but only ${validOrders.length} have complete product data`)
+          
+          // For debugging - log the incomplete orders
+          const incompleteOrders = response.data.filter(order => {
+            return !order.produit_id || !order.nom_produit || !order.quantite || !order.unit_price
+          })
+          console.log('Incomplete orders:', incompleteOrders)
+        }
+        
+        // Return only valid orders
+        return validOrders
+      }
+      
+      return response.data || []
+    } catch (error) {
+      console.error('Error fetching child orders:', error)
+      return []
+    }
+  }
+  
   useEffect(() => {
     const fetchOrderData = async () => {
       try {
@@ -101,6 +152,26 @@ export default function ViewOrder() {
         const orderData = response.data;
         if (!orderData.date_commande) {
           orderData.date_commande = new Date().toISOString().split('T')[0];
+        }
+        
+        // If this is a parent order, ensure we have child orders
+        if (orderData.is_parent) {
+          console.log('Parent order detected:', orderData.is_parent)
+          
+          // If childOrders aren't included in the response, fetch them separately
+          if (!orderData.childOrders || orderData.childOrders.length === 0) {
+            console.log('No child orders in response, fetching separately...')
+            // Fetch only child orders for this specific parent
+            const fetchedChildOrders = await fetchChildOrders(orderData.id)
+            console.log(`Fetched ${fetchedChildOrders.length} child orders for parent ID ${orderData.id}`)
+            setChildOrders(fetchedChildOrders)
+          } else {
+            console.log('Child orders from response:', orderData.childOrders)
+            setChildOrders(orderData.childOrders)
+          }
+        } else {
+          // Not a parent order, ensure child orders are empty
+          setChildOrders([])
         }
         
         setOrder(orderData)
@@ -190,14 +261,35 @@ export default function ViewOrder() {
                 <h3 className={`text-base sm:text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-800'} mb-3`}>Order Information</h3>
                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-md`}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Product</p>
-                      <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{order.nom_produit}</p>
-                    </div>
-                    <div>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Quantity</p>
-                      <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{order.quantite} units</p>
-                    </div>
+                    {!order.is_parent ? (
+                      // Single product order display
+                      <>
+                        <div>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Product</p>
+                          <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{order.nom_produit}</p>
+                        </div>
+                        <div>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Quantity</p>
+                          <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{order.quantite} units</p>
+                        </div>
+                      </>
+                    ) : (
+                      // Multi-product order display
+                      <>
+                        <div>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Order Type</p>
+                          <p className={`font-medium text-blue-500`}>Multi-Product Order</p>
+                        </div>
+                        <div>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Total Amount</p>
+                          <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                            ${typeof order.total_amount === 'number' 
+                              ? order.total_amount.toFixed(2) 
+                              : parseFloat(order.total_amount || 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Order Date</p>
                       <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{formatDate(order.date_commande)}</p>
@@ -209,6 +301,61 @@ export default function ViewOrder() {
                   </div>
                 </div>
               </div>
+
+              {/* Show child orders for parent orders */}
+              {order.is_parent && (
+                <div className="mb-6">
+                  <h3 className={`text-base sm:text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-800'} mb-3`}>Products in this Order</h3>
+                  <div className="overflow-x-auto">
+                    <table className={`min-w-full divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                      <thead className={darkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+                        <tr>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-wider`}>Product</th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-wider`}>Quantity</th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-wider`}>Unit Price</th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-wider`}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                        {childOrders.length > 0 ? (
+                          childOrders.map((childOrder) => (
+                            <tr key={childOrder.id}>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {childOrder.nom_produit || 'Product name not available'}
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {childOrder.quantite || 'N/A'}
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {childOrder.unit_price ? `$${parseFloat(childOrder.unit_price).toFixed(2)}` : 'N/A'}
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {(childOrder.unit_price && childOrder.quantite) ? 
+                                  `$${(parseFloat(childOrder.unit_price) * parseFloat(childOrder.quantite)).toFixed(2)}` : 
+                                  'N/A'}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" className={`px-6 py-4 text-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {loading ? 'Loading child orders...' : 'No product details available'}
+                            </td>
+                          </tr>
+                        )}
+                        <tr className={`${darkMode ? 'bg-gray-600' : 'bg-gray-100'}`}>
+                          <td colSpan="3" className={`px-4 py-3 text-sm font-medium text-right ${darkMode ? 'text-white' : 'text-gray-900'}`}>Grand Total:</td>
+                          <td className={`px-4 py-3 text-sm font-bold text-right ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            ${typeof order.total_amount === 'number' 
+                              ? order.total_amount.toFixed(2) 
+                              : parseFloat(order.total_amount || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
               
               <div className="mb-6">
                 <h3 className={`text-base sm:text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-800'} mb-3`}>Additional Details</h3>

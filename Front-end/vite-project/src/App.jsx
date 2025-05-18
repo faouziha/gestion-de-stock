@@ -39,6 +39,7 @@ import DisplaySupplierOrders from './Components/Dashboard components/SupplierOrd
 import AddSupplierOrder from './Components/Dashboard components/SupplierOrders/AddSupplierOrder'
 import EditSupplierOrder from './Components/Dashboard components/SupplierOrders/EditSupplierOrder'
 import ViewSupplierOrder from './Components/Dashboard components/SupplierOrders/ViewSupplierOrder'
+import MultiClientOrders from './Components/Dashboard components/Orders/MultiClientOrders'
 
 
 function App() {
@@ -72,6 +73,7 @@ function App() {
                 {/* Order Routes */}
                 <Route path="/orders" element={<DisplayOrders />} />
                 <Route path="/orders/add" element={<AddOrders />} />
+                <Route path="/orders/multi" element={<MultiClientOrders />} />
                 <Route path="/orders/edit/:id" element={<EditOrders />} />
                 <Route path="/orders/view/:id" element={<ViewOrder />} />
                 {/* Supplier Routes */}

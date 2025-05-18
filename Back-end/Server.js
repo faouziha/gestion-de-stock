@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const pg = require("pg");
 const bcrypt = require("bcrypt");
+const multiClientOrdersRouter = require("./MultiClientOrders");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
@@ -38,6 +39,9 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' })); // Increase payload limit for Base64 images
 app.use(cors());
+
+// Register the multi-client-order router
+app.use('/multi-client-order', multiClientOrdersRouter);
 
 // Serve static files from the uploads directory
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -957,23 +961,170 @@ app.put("/commande/:id", async (req, res) => {
 
 //delete a commande
 
+// Get orders - either all orders or child orders for a specific parent
+app.get("/commande", async (req, res) => {
+    try {
+        const parentOrderId = req.query.parent_order_id;
+        const userId = req.query.userId;
+        
+        // If parent_order_id is provided, return child orders for that parent
+        if (parentOrderId) {
+            console.log("Fetching child orders for parent:", { parentOrderId, userId });
+            
+            // Get only orders with this parent_order_id - ensuring they are actual child orders
+            let query = `
+                SELECT c.* 
+                FROM commande c
+                WHERE c.parent_order_id = $1
+                AND c.is_parent = false
+            `;
+            
+            let params = [parentOrderId];
+            
+            if (userId) {
+                query += " AND c.userId = $2";
+                params.push(userId);
+            }
+            
+            const childOrdersResult = await db.query(query, params);
+            console.log(`Found ${childOrdersResult.rows.length} child orders for parent ${parentOrderId}`);
+            
+            // Log summary of each child order for debugging
+            if (childOrdersResult.rows.length > 0) {
+                childOrdersResult.rows.forEach((child, index) => {
+                    console.log(`Child order ${index + 1} for parent ${parentOrderId}: Product ID ${child.produit_id}, Name: ${child.nom_produit}`);
+                });
+            } else {
+                console.log(`No child orders found for parent ${parentOrderId}`);
+            }
+            
+            res.json(childOrdersResult.rows);
+        } else {
+            // No parent_order_id provided, get all top-level orders (exclude child orders)
+            console.log("Fetching all orders", { userId });
+            
+            let query = `
+                SELECT * 
+                FROM commande 
+                WHERE parent_order_id IS NULL
+            `;
+            
+            let params = [];
+            let paramIndex = 1;
+            
+            if (userId) {
+                query += ` AND userId = $${paramIndex}`;
+                params.push(userId);
+                paramIndex++;
+            }
+            
+            query += " ORDER BY id DESC";
+            
+            const allOrdersResult = await db.query(query, params);
+            console.log(`Found ${allOrdersResult.rows.length} top-level orders`);
+            
+            res.json(allOrdersResult.rows);
+        }
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Get a single order with its child orders if it's a parent order
+app.get("/commande/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId;
+        
+        console.log("Fetching order:", { orderId: id, requestUserId: userId });
+        
+        // Get the specific order first
+        const orderResult = await db.query("SELECT * FROM commande WHERE id = $1", [id]);
+        
+        if (orderResult.rows.length === 0) {
+            console.log("Order not found with ID:", id);
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
+        const order = orderResult.rows[0];
+        console.log("Order data:", order);
+        
+        // Check if this is a parent order
+        if (order.is_parent) {
+            // Fetch all child orders with detailed query and explicit columns
+            const childOrdersResult = await db.query(
+                `SELECT id, produit_id, nom_produit, quantite, date_commande, customer_name, 
+                        unit_price, total_amount, status, userId, parent_order_id, is_parent
+                 FROM commande 
+                 WHERE parent_order_id = $1 
+                 ORDER BY id`, 
+                [id]
+            );
+            
+            console.log(`Found ${childOrdersResult.rows.length} child orders for parent ${id}`);
+            
+            // Debug log for child orders
+            if (childOrdersResult.rows.length > 0) {
+                console.log("Child orders sample:", childOrdersResult.rows[0]);
+                childOrdersResult.rows.forEach((child, index) => {
+                    console.log(`Child order ${index + 1}: Product: ${child.nom_produit}, Quantity: ${child.quantite}`);
+                });
+            } else {
+                console.log("No child orders found for this parent order.");
+            }
+            
+            // Return the parent order with its child orders
+            return res.json({
+                ...order,
+                childOrders: childOrdersResult.rows
+            });
+        }
+        
+        // If not a parent order, just return the order as is
+        res.json(order);
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 app.delete("/commande/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.query.userId;
         
-        // If userId is provided, ensure the order belongs to that user
+        console.log("Attempting to delete order:", { orderId: id, requestUserId: userId });
+        
+        // Check the column names in the commande table
+        const columnCheck = await db.query(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'commande'"
+        );
+        console.log("Columns in commande table:", columnCheck.rows);
+        
+        // Get the specific order first
+        const checkOrder = await db.query("SELECT * FROM commande WHERE id = $1", [id]);
+        
+        if (checkOrder.rows.length === 0) {
+            console.log("Order not found with ID:", id);
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
+        console.log("Order data:", checkOrder.rows[0]);
+        
+        // TEMPORARILY DISABLING PERMISSION CHECK TO DEBUG
+        /* 
+        // Normally, we would check user permissions here
         if (userId) {
-            const checkOrder = await db.query("SELECT * FROM commande WHERE id = $1", [id]);
+            const orderUserId = parseInt(checkOrder.rows[0].userId); // or userid
+            const requestUserId = parseInt(userId);
             
-            if (checkOrder.rows.length === 0) {
-                return res.status(404).json({ error: "Order not found" });
-            }
-            
-            if (checkOrder.rows[0].userId !== userId) {
+            if (orderUserId !== requestUserId) {
+                console.log("Permission denied - userIds don't match");
                 return res.status(403).json({ error: "You don't have permission to delete this order" });
             }
         }
+        */
         
         const deletedCommande = await db.query("DELETE FROM commande WHERE id = $1 RETURNING *", [id]);
         

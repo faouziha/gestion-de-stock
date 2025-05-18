@@ -20,8 +20,15 @@ export default function DisplayOrders() {
       const response = await axios.get(`http://localhost:3000/commande?userId=${user.id}`)
       console.log('Orders data from server:', response.data)
       
+      // Filter out any child orders (should have been done by the backend, but just to be safe)
+      const filteredOrders = response.data.filter(order => {
+        // Only include orders that are either standalone or parent orders (not child orders)
+        return !order.parent_order_id;
+      })
+      console.log(`Filtered ${response.data.length - filteredOrders.length} child orders out of ${response.data.length} total orders`)
+      
       // Make sure date_commande is set for each order
-      const formattedOrders = response.data.map(order => ({
+      const formattedOrders = filteredOrders.map(order => ({
         ...order,
         date_commande: order.date_commande || new Date().toISOString().split('T')[0]
       }))
@@ -208,13 +215,17 @@ export default function DisplayOrders() {
                         #{order.id}
                       </td>
                       <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'} text-center`}>
-                        {order.nom_produit}
+                        {order.is_parent ? 
+                          <span className="font-semibold text-blue-500">Multi-Product Order</span> : 
+                          order.nom_produit || 'N/A'}
                       </td>
                       <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'} text-center`}>
                         {order.customer_name || 'N/A'}
                       </td>
                       <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'} text-center`}>
-                        {order.quantite} units
+                        {order.is_parent ? 
+                          <span className="italic">Multiple</span> : 
+                          `${order.quantite || 0} units`}
                       </td>
                       <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-center ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                         {formatDate(order.date_commande) || new Date().toLocaleDateString()}
@@ -287,9 +298,30 @@ export default function DisplayOrders() {
                     </span>
                   </div>
                   <div className="mb-3">
-                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}><span className="font-medium">Product:</span> {order.nom_produit}</div>
-                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}><span className="font-medium">Customer:</span> {order.customer_name || 'N/A'}</div>
-                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-medium">Quantity:</span> {order.quantite} units</div>
+                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+                      <span className="font-medium">Product:</span> 
+                      {order.is_parent ? 
+                        <span className="font-semibold text-blue-500">Multi-Product Order</span> : 
+                        order.nom_produit || 'N/A'}
+                    </div>
+                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+                      <span className="font-medium">Customer:</span> {order.customer_name || 'N/A'}
+                    </div>
+                    <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <span className="font-medium">Quantity:</span> 
+                      {order.is_parent ? 
+                        <span className="italic">Multiple</span> : 
+                        `${order.quantite || 0} units`}
+                    </div>
+                    {order.is_parent && order.total_amount && (
+                      <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} mt-1`}>
+                        <span className="font-medium">Total Amount:</span> ${
+                          typeof order.total_amount === 'number' 
+                            ? order.total_amount.toFixed(2) 
+                            : parseFloat(order.total_amount).toFixed(2)
+                        }
+                      </div>
+                    )}
                   </div>
                   <div className={`flex justify-between pt-3 border-t ${darkMode ? 'border-gray-600' : 'border-gray-100'}`}>
                     <button 
