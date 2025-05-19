@@ -14,77 +14,139 @@ export default function ViewFacture() {
     const [facture, setFacture] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isPrinting, setIsPrinting] = useState(false);
     
-    // Direct print function using browser's print API
+    // Create a clean printable version using a hidden iframe and open print dialog directly
     const handlePrint = () => {
-        // Store the original document content
-        const originalContents = document.body.innerHTML;
+        // Create a hidden iframe
+        let iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
         
-        // Get the content to print
-        const printContents = document.getElementById('printable-invoice').innerHTML;
+        // Format the invoice data for printing
+        const invoiceDate = formatDate(facture.date);
+        const dueDate = facture.due_date ? formatDate(facture.due_date) : 'N/A';
         
-        // Temporarily replace the entire page with just the print content
-        document.body.innerHTML = `
-          <div style="width: 100%; display: block; background-color: white; color: black; padding: 20px;">
-            ${printContents}
-          </div>
-        `;
+        // Generate the invoice items HTML
+        let invoiceItemsHtml = '';
+        if (facture.items && facture.items.length > 0) {
+            invoiceItemsHtml = facture.items.map((item, index) => {
+                const unitPrice = parseFloat(item.unit_price || 0).toFixed(2);
+                const quantity = item.quantity || 0;
+                const amount = parseFloat(item.amount || 0).toFixed(2);
+                return `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd">${item.description}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center">${quantity}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${unitPrice}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${amount}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
         
-        // Add custom print styles
-        const style = document.createElement('style');
-        style.innerHTML = `
-            @media print {
-                @page {
-                    size: A4;
-                    margin: 0.5cm;
-                }
-                
-                body {
-                    background-color: white !important;
-                    color: black !important;
-                    font-size: 12pt;
-                    font-family: 'Arial', sans-serif;
-                }
-                
-                h2 {
-                    font-size: 18px !important;
-                    margin-bottom: 10px !important;
-                }
-                
-                h3 {
-                    font-size: 16px !important;
-                    margin-bottom: 8px !important;
-                }
-                
-                p {
-                    margin-bottom: 5px !important;
-                }
-                
-                table {
-                    width: 100% !important;
-                    border-collapse: collapse !important;
-                    margin: 15px 0;
-                }
-                
-                table th, table td {
-                    border: 1px solid #ddd !important;
-                    padding: 8px !important;
-                    text-align: left !important;
-                }
-                
-                table th {
-                    background-color: #f2f2f2 !important;
-                    color: black !important;
-                }
-            }
-        `;
-        document.head.appendChild(style);
+        // Get reference to the iframe document
+        const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+        const doc = iframeDoc.document || iframeDoc;
         
-        // Print the isolated content
-        window.print();
+        // Generate the print document
+        doc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Invoice #${facture.invoice_number}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h1 { text-align: center; margin-bottom: 5px; }
+                    .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+                    .info-section { margin-bottom: 20px; }
+                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 20px; }
+                    .info-box { border: 1px solid #ddd; border-radius: 4px; padding: 15px; }
+                    h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                    th { text-align: left; background: #f2f2f2; padding: 8px; border: 1px solid #ddd; }
+                    td { padding: 8px; border: 1px solid #ddd; }
+                    .footer { margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 15px; }
+                    .total-row { font-weight: bold; }
+                    .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+                    .status-paid { background: #D1FAE5; color: #065F46; }
+                    .status-pending { background: #FEF3C7; color: #92400E; }
+                    .status-overdue { background: #FEE2E2; color: #B91C1C; }
+                    .total-section { text-align: right; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>INVOICE #${facture.invoice_number}</h1>
+                    <p>Date: ${invoiceDate}</p>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-box">
+                        <h2>Invoice Details</h2>
+                        <p><strong>Invoice Number:</strong> ${facture.invoice_number}</p>
+                        <p><strong>Date:</strong> ${invoiceDate}</p>
+                        <p><strong>Due Date:</strong> ${dueDate}</p>
+                        <p>
+                            <strong>Status:</strong> 
+                            <span class="badge status-${facture.status ? facture.status.toLowerCase() : 'pending'}">
+                                ${facture.status || 'Draft'}
+                            </span>
+                        </p>
+                        ${facture.notes ? `<p><strong>Notes:</strong> ${facture.notes}</p>` : ''}
+                    </div>
+                    
+                    <div class="info-box">
+                        <h2>Customer Information</h2>
+                        <p><strong>Customer:</strong> ${facture.customer_name || 'N/A'}</p>
+                        ${facture.client_email ? `<p><strong>Email:</strong> ${facture.client_email}</p>` : ''}
+                        ${facture.client_address ? `<p><strong>Address:</strong> ${facture.client_address}</p>` : ''}
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <h2>Invoice Items</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th style="text-align: center">Quantity</th>
+                                <th style="text-align: right">Unit Price</th>
+                                <th style="text-align: right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${invoiceItemsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="3" style="text-align: right">Total:</td>
+                                <td style="text-align: right">$${parseFloat(facture.total_amount || 0).toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="footer">
+                    <p>Thank you for your business!</p>
+                    <p>Generated on ${new Date().toLocaleDateString()}</p>
+                </div>
+            </body>
+            </html>
+        `);
         
-        // Restore the original content after printing
-        document.body.innerHTML = originalContents;
+        doc.close();
+        
+        // Print after document has loaded completely
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            
+            // Remove the iframe after printing
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 1000);
+        }, 500);
     };
 
     useEffect(() => {
@@ -330,6 +392,24 @@ export default function ViewFacture() {
                     </div>
                 )}
             </div>
+            {/* Print-specific styling */}
+            <style>{`
+                @media print {
+                    button, .no-print, .print-hide {
+                        display: none !important;
+                    }
+                    
+                    body {
+                        background: white;
+                        color: black;
+                    }
+                    
+                    .shadow {
+                        box-shadow: none !important;
+                        border: 1px solid #eaeaea;
+                    }
+                }
+            `}</style>
         </div>
     )
 }

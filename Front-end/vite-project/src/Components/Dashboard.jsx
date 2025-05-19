@@ -106,6 +106,8 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   
   // State for charts
   const [topProducts, setTopProducts] = useState([]);
@@ -136,6 +138,14 @@ export default function Dashboard() {
         const clientsResponse = await axios.get(`http://localhost:3000/clients?userId=${user.id}`);
         const clients = clientsResponse.data;
         
+        // Fetch supplier orders - filter by user ID
+        const supplierOrdersResponse = await axios.get(`http://localhost:3000/supplier-order?userId=${user.id}`);
+        const supplierOrders = supplierOrdersResponse.data;
+        
+        // Fetch invoices - filter by user ID
+        const invoicesResponse = await axios.get(`http://localhost:3000/facture?userId=${user.id}`);
+        const invoices = invoicesResponse.data;
+        
         // Find products with low stock (less than 5 units)
         const lowStock = products.filter(product => parseInt(product.total) < 5);
         setLowStockProducts(lowStock);
@@ -146,6 +156,77 @@ export default function Dashboard() {
           suppliers: suppliers.length,
           clients: clients.length // Update with actual client count
         });
+        
+        // Generate recent activities by combining and sorting the most recent items
+        // from all data sources
+        const activities = [
+          // Recent products (3 most recent)
+          ...products.slice(0, 10).map(product => ({
+            id: `product-${product.id}`,
+            type: 'product',
+            title: `New product "${product.nom}" added`,
+            details: `Stock: ${product.total} units at $${parseFloat(product.prix).toFixed(2)} each`,
+            date: product.date || new Date().toISOString(),
+            link: `/products/view/${product.id}`
+          })),
+          
+          // Recent client orders (3 most recent)
+          ...orders.slice(0, 10).map(order => ({
+            id: `order-${order.id}`,
+            type: 'order',
+            title: `New client order #${order.id} received`,
+            details: `Status: ${order.status || 'Pending'} | Total: $${parseFloat(order.total || 0).toFixed(2)}`,
+            date: order.date || new Date().toISOString(),
+            link: `/clientorders/view/${order.id}`
+          })),
+          
+          // Recent supplier orders (3 most recent)
+          ...supplierOrders.slice(0, 10).map(order => ({
+            id: `supplier-order-${order.id}`,
+            type: 'supplier-order',
+            title: `New supplier order #${order.id} created`,
+            details: `From: ${order.supplier_name} | Status: ${order.status || 'Pending'}`,
+            date: order.order_date || new Date().toISOString(),
+            link: `/supplier-orders/view/${order.id}`
+          })),
+          
+          // Recent invoices (3 most recent)
+          ...invoices.slice(0, 10).map(invoice => ({
+            id: `invoice-${invoice.id}`,
+            type: 'invoice',
+            title: `Invoice #${invoice.invoice_number} generated`,
+            details: `Status: ${invoice.status || 'Pending'} | Amount: $${parseFloat(invoice.total_amount || 0).toFixed(2)}`,
+            date: invoice.date || new Date().toISOString(),
+            link: `/factures/view/${invoice.id}`
+          })),
+          
+          // Recent clients (3 most recent)
+          ...clients.slice(0, 10).map(client => ({
+            id: `client-${client.id}`,
+            type: 'client',
+            title: `New client "${client.prenom} ${client.nom}" registered`,
+            details: client.email ? `Email: ${client.email}` : 'No email provided',
+            date: client.date_added || new Date().toISOString(),
+            link: `/clients/${client.id}`
+          })),
+          
+          // Recent suppliers (3 most recent)
+          ...suppliers.slice(0, 10).map(supplier => ({
+            id: `supplier-${supplier.id}`,
+            type: 'supplier',
+            title: `New supplier "${supplier.nom}" added`,
+            details: supplier.email ? `Email: ${supplier.email}` : 'No email provided',
+            date: supplier.date_added || new Date().toISOString(),
+            link: `/suppliers/view/${supplier.id}`
+          }))
+        ];
+        
+        // Sort by date (newest first) and take the 10 most recent activities
+        const sortedActivities = activities
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 10);
+        
+        setRecentActivities(sortedActivities);
         
         setLoading(false);
       } catch (error) {
@@ -366,32 +447,72 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            stats.orders > 0 ? (
-              <ul className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <li className="py-3">
-                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>New order #{stats.orders} received</p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>Today</p>
-                </li>
-                {lowStockProducts.length > 0 && (
-                  <li className="py-3">
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-800'} flex items-center`}>
-                      <FaExclamationTriangle className="text-amber-500 mr-2" />
-                      {lowStockProducts.length} products low in stock
-                    </p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>Requires attention</p>
-                  </li>
+            recentActivities.length > 0 ? (
+              <>
+                <ul className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  {/* Dynamic recent activity items - limited to 5 initially */}
+                  {recentActivities
+                    .slice(0, showAllActivities ? recentActivities.length : 5)
+                    .map(activity => (
+                      <li key={activity.id} className="py-3">
+                        <Link to={activity.link} className="block">
+                          <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-800'} hover:underline`}>
+                            {activity.type === 'order' && <FaShoppingCart className="inline mr-2 text-green-500" />}
+                            {activity.type === 'product' && <FaBox className="inline mr-2 text-blue-500" />}
+                            {activity.type === 'supplier-order' && <FaTruck className="inline mr-2 text-yellow-500" />}
+                            {activity.type === 'client' && <FaUsers className="inline mr-2 text-purple-500" />}
+                            {activity.type === 'supplier' && <FaTruck className="inline mr-2 text-amber-500" />}
+                            {activity.type === 'invoice' && <FaFileInvoice className="inline mr-2 text-indigo-500" />}
+                            {activity.title}
+                          </p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                            {activity.details}
+                          </p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
+                            {new Date(activity.date).toLocaleString('en-US', { 
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </Link>
+                      </li>
+                    ))}
+                  
+                  {/* Always include low stock warning if applicable */}
+                  {lowStockProducts.length > 0 && (
+                    <li className="py-3">
+                      <Link to="/displayProduct" className="block">
+                        <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-800'} flex items-center font-medium hover:underline`}>
+                          <FaExclamationTriangle className="text-amber-500 mr-2" />
+                          {lowStockProducts.length} products low in stock
+                        </p>
+                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>Requires attention</p>
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+                
+                {/* Show All / Show Less toggle button */}
+                {recentActivities.length > 5 && (
+                  <button
+                    onClick={() => setShowAllActivities(!showAllActivities)}
+                    className={`w-full mt-3 py-2 text-sm font-medium ${darkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-blue-400' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-blue-600'} rounded transition-colors text-center`}
+                  >
+                    {showAllActivities ? 'Show Less' : `Show All (${recentActivities.length})`}
+                  </button>
                 )}
-                <li className="py-3">
-                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                    Welcome to your inventory management system
-                  </p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
-                    Manage your products, orders, and suppliers
-                  </p>
-                </li>
-              </ul>
+              </>
             ) : (
-              <p className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>No recent activity to display.</p>
+              <div className="text-center py-6">
+                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-2`}>No recent activity to display.</p>
+                <p className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+                  Your recent activities will appear here as you work with the system.
+                </p>
+              </div>
             )
           )}
         </div>
@@ -648,7 +769,7 @@ export default function Dashboard() {
           </Link>
           
           <Link 
-            to="/orders/add" 
+            to="/clientorders/create" 
             className={`${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-green-50 hover:bg-green-100'} p-4 rounded-lg flex flex-col items-center justify-center transition-colors`}
           >
             <FaShoppingCart className={`text-2xl mb-2 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
@@ -664,7 +785,7 @@ export default function Dashboard() {
           </Link>
           
           <Link 
-            to="/orders" 
+            to="/clientorders" 
             className={`${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-purple-50 hover:bg-purple-100'} p-4 rounded-lg flex flex-col items-center justify-center transition-colors`}
           >
             <FaShoppingCart className={`text-2xl mb-2 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />

@@ -76,6 +76,17 @@ This application is designed to streamline inventory management processes for sm
   - Automatic stock level checking during order creation
   - Warning messages when attempting to exceed available stock
   - Prevention of submitting orders that exceed available inventory
+- **Professional Print Functionality**: Generate professional printable order documents
+  - Clean, well-formatted order details
+  - Customer information section
+  - Itemized product table with quantities and prices
+  - Color-coded status indicators
+  - Total calculations and payment information
+  - Print-friendly formatting for professional documentation
+- **Multi-Product Orders**: Support for orders containing multiple products
+  - Parent-child order relationship structure
+  - Ability to add, edit, and remove products within an order
+  - Automatic total calculations based on products and quantities
 - **Powerful Search Functionality**: Find orders quickly by:
   - Product name
   - Customer name
@@ -93,6 +104,16 @@ This application is designed to streamline inventory management processes for sm
   - Multiple contact methods (phone, email, website)
   - Physical address and shipping information
   - Payment terms and account details
+- **Supplier Order Management**: Complete system for tracking supplier orders
+  - Order creation with product selection and quantity specification
+  - Status tracking (Pending, Processing, Shipped, Delivered, Cancelled)
+  - Expected delivery dates and notes
+  - Color-coded status indicators for visual tracking
+- **Order Documentation**: Professional print functionality for supplier orders
+  - Well-formatted order details and supplier information
+  - Product specifications with quantities and prices
+  - Clean, professional layout for business documentation
+  - Print-friendly design for record-keeping
 - **User-Specific Suppliers**: Privacy and data separation where each user only sees suppliers they created
 - **Contact Management**: Track all interactions with suppliers
 - **Advanced Search Capabilities**: Find suppliers quickly by:
@@ -133,7 +154,13 @@ This application is designed to streamline inventory management processes for sm
   - Paid: Payment received
   - Overdue: Payment past due date
   - Cancelled: Invoice cancelled
-- **Print and Export Options**: Print-friendly format with blue-themed action buttons
+- **Enhanced Print Functionality**: Generate professional printable invoice documents
+  - Clean, structured layout with company and customer information
+  - Detailed invoice header with invoice number, date, and status
+  - Itemized product/service table with quantities and prices
+  - Clearly formatted totals section
+  - Print-specific styling for professional output
+  - Consistent experience with other printable documents
 - **PDF Generation**: Create PDF versions of invoices for email or download
 - **Order Linking**: Direct connection between invoices and their corresponding orders
 - **Advanced Search Functionality**: Find invoices quickly by:
@@ -572,3 +599,29 @@ The frontend is built with React and Vite, providing a responsive, interactive, 
 - Regularly update order statuses to maintain accurate tracking
 - Use the print function to generate professional invoices for customers
 - Take advantage of the responsive design to access the system on any device
+
+## Recent Updates
+
+### Print Functionality Enhancement (May 2025)
+- **Unified Print System**: Implemented consistent print functionality across client orders, supplier orders, and invoices
+- **Improved Document Format**: Professional, clean layout for all business documents
+- **Technical Implementation**: Replaced previous DOM-based printing with more reliable iframe-based solution
+- **Print-Specific Styling**: Added dedicated print stylesheets that hide UI elements and optimize for printed output
+- **Document Components**:
+  - Organized header with document type and ID
+  - Two-column layout for document and entity information
+  - Color-coded status indicators
+  - Detailed item tables with aligned columns
+  - Professional footer with thank you message and generation date
+
+### Multi-Product Order System Enhancements (April 2025)
+- **Fixed Product Display**: Corrected issues where product prices weren't displaying when adding new products
+- **Improved Edit Functionality**: Fixed issues with product selection and duplicate/blank product cards
+- **Data Validation**: Added validation for child orders and proper data type handling
+- **UI Consistency**: Implemented consistent styling across the application
+
+### Supplier Order System Implementation (March 2025)
+- **Complete CRUD Functionality**: Built comprehensive supplier order management system
+- **User-Specific Data**: Implemented data privacy with user-specific filtering
+- **Status Tracking**: Added color-coded status tracking (Pending, Processing, Shipped, Delivered, Cancelled)
+- **Automatic Calculations**: Implemented auto-calculation of total amounts based on quantity and unit price

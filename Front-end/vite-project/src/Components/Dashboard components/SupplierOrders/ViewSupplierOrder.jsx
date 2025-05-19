@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { FaEdit, FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaArrowLeft, FaPrint } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 export default function ViewSupplierOrder() {
@@ -14,6 +14,7 @@ export default function ViewSupplierOrder() {
   
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -39,38 +40,123 @@ export default function ViewSupplierOrder() {
     fetchOrder();
   }, [id, user.id, navigate]);
 
-  const handleDelete = () => {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(`http://localhost:3000/supplier-order/${id}?userId=${user.id}`);
+  // Create a clean printable version using a hidden iframe and open print dialog directly
+  const handlePrint = () => {
+    // Create a hidden iframe
+    let iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    // Format the order data for printing
+    const orderDate = formatDate(order.order_date);
+    const expectedDeliveryDate = formatDate(order.expected_delivery_date);
+    
+    // Get reference to the iframe document
+    const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+    const doc = iframeDoc.document || iframeDoc;
+    
+    // Generate the print document
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Supplier Order #${order.id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { text-align: center; margin-bottom: 5px; }
+          .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+          .info-section { margin-bottom: 20px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 20px; }
+          .info-box { border: 1px solid #ddd; border-radius: 4px; padding: 15px; }
+          h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          th { text-align: left; background: #f2f2f2; padding: 8px; border: 1px solid #ddd; }
+          td { padding: 8px; border: 1px solid #ddd; }
+          .footer { margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 15px; }
+          .total-row { font-weight: bold; }
+          .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+          .status-pending { background: #FEF3C7; color: #92400E; }
+          .status-delivered { background: #D1FAE5; color: #065F46; }
+          .status-processing { background: #DBEAFE; color: #1E40AF; }
+          .total-section { text-align: right; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SUPPLIER ORDER #${order.id}</h1>
+          <p>Date: ${orderDate}</p>
+        </div>
+        
+        <div class="info-grid">
+          <div class="info-box">
+            <h2>Order Details</h2>
+            <p><strong>Order ID:</strong> ${order.id}</p>
+            <p><strong>Date:</strong> ${orderDate}</p>
+            <p><strong>Expected Delivery:</strong> ${expectedDeliveryDate}</p>
+            <p>
+              <strong>Status:</strong> 
+              <span class="badge status-${order.status ? order.status.toLowerCase() : 'pending'}">
+                ${order.status || 'Pending'}
+              </span>
+            </p>
+            ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
+          </div>
           
-          Swal.fire(
-            'Deleted!',
-            'The supplier order has been deleted.',
-            'success'
-          ).then(() => {
-            navigate('/supplier-orders');
-          });
-        } catch (error) {
-          console.error('Error deleting order:', error);
-          
-          Swal.fire(
-            'Error!',
-            'There was a problem deleting the order.',
-            'error'
-          );
-        }
-      }
-    });
+          <div class="info-box">
+            <h2>Supplier Information</h2>
+            <p><strong>Supplier ID:</strong> ${order.fournisseur_id}</p>
+            <p><strong>Supplier Name:</strong> ${order.supplier_name}</p>
+          </div>
+        </div>
+        
+        <div class="info-section">
+          <h2>Product Details</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th style="text-align: right">Unit Price</th>
+                <th style="text-align: right">Quantity</th>
+                <th style="text-align: right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${order.product_name}</td>
+                <td style="text-align: right">$${parseFloat(order.unit_price).toFixed(2)}</td>
+                <td style="text-align: right">${order.quantity}</td>
+                <td style="text-align: right">$${parseFloat(order.total_amount).toFixed(2)}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="3" style="text-align: right">Total:</td>
+                <td style="text-align: right">$${parseFloat(order.total_amount).toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        
+        <div class="footer">
+          <p>Thank you for your business!</p>
+          <p>Generated on ${new Date().toLocaleDateString()}</p>
+        </div>
+      </body>
+      </html>
+    `);
+    
+    doc.close();
+    
+    // Print after document has loaded completely
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      
+      // Remove the iframe after printing
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
   };
 
   const formatDate = (dateString) => {
@@ -149,11 +235,11 @@ export default function ViewSupplierOrder() {
             Edit
           </button>
           <button
-            onClick={handleDelete}
-            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors duration-300 flex items-center justify-center flex-1 sm:flex-initial"
+            onClick={handlePrint}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center flex-1 sm:flex-initial"
           >
-            <FaTrash className="mr-2" />
-            Delete
+            <FaPrint className="mr-2" />
+            Print
           </button>
         </div>
       </div>
@@ -258,6 +344,24 @@ export default function ViewSupplierOrder() {
           )}
         </div>
       </div>
+      {/* Print-specific styling */}
+      <style>{`
+        @media print {
+          button, .no-print {
+            display: none !important;
+          }
+          
+          body {
+            background: white;
+            color: black;
+          }
+          
+          .shadow {
+            box-shadow: none !important;
+            border: 1px solid #eaeaea;
+          }
+        }
+      `}</style>
     </div>
   );
 }
