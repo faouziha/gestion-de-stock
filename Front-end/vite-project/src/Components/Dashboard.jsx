@@ -103,7 +103,7 @@ export default function Dashboard() {
             <FaShoppingCart className={`${darkMode ? 'text-green-200' : 'text-green-800'} text-xl`} />
           </div>
           <div>
-            <h2 className={`text-lg font-semibold ${darkMode ? 'text-green-200' : 'text-green-800'}`}>Orders</h2>
+            <h2 className={`text-lg font-semibold ${darkMode ? 'text-green-200' : 'text-green-800'}`}>Clients Orders</h2>
             <p className={`text-2xl sm:text-3xl font-bold mt-1 ${darkMode ? 'text-white' : 'text-green-900'}`}>
               {loading ? '...' : stats.orders}
             </p>

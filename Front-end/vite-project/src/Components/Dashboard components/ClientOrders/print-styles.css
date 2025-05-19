@@ -1,0 +1,114 @@
+/* Print-specific styles */
+@media print {
+  /* Hide navigation elements and buttons */
+  button, 
+  nav, 
+  header, 
+  footer, 
+  .no-print,
+  .sidebar,
+  [role="navigation"],
+  /* Dashboard specific elements */
+  .w-64,
+  #root > div > div > div:first-child,
+  /* Target sidebar specifically */
+  [class*="fixed"][class*="w-64"],
+  [class*="md:translate-x-0"],
+  [class*="z-40"][class*="shadow-lg"],
+  /* Mobile sidebar elements */
+  .md\:hidden,
+  /* Navbar */
+  div[class*="fixed top-0"],
+  /* Any fixed positioned items */
+  .fixed {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    z-index: -9999 !important;
+  }
+
+  /* Set basic page formatting */
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+
+  body {
+    background-color: white !important;
+    color: black !important;
+    font-size: 12pt;
+    font-family: 'Arial', sans-serif;
+    line-height: 1.3;
+  }
+
+  /* General container styling */
+  .print-container {
+    display: block !important;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Show order header nicely */
+  .print-header {
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+  }
+
+  /* Format order sections */
+  .print-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+
+  /* Format tables for printing */
+  table.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+  }
+
+  table.print-table th,
+  table.print-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  table.print-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+
+  /* Add company logo and branding */
+  .company-logo {
+    display: block;
+    max-width: 200px;
+    margin: 0 auto 20px;
+  }
+
+  /* Format order summary */
+  .order-summary {
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+
+  /* Make sure the footer always appears at the bottom of the page */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    font-size: 10pt;
+    text-align: center;
+  }
+}

@@ -17,9 +17,21 @@ export default function ViewFacture() {
     
     // Direct print function using browser's print API
     const handlePrint = () => {
-        // Add print-specific styles
+        // Store the original document content
+        const originalContents = document.body.innerHTML;
+        
+        // Get the content to print
+        const printContents = document.getElementById('printable-invoice').innerHTML;
+        
+        // Temporarily replace the entire page with just the print content
+        document.body.innerHTML = `
+          <div style="width: 100%; display: block; background-color: white; color: black; padding: 20px;">
+            ${printContents}
+          </div>
+        `;
+        
+        // Add custom print styles
         const style = document.createElement('style');
-        style.id = 'print-style';
         style.innerHTML = `
             @media print {
                 @page {
@@ -27,73 +39,40 @@ export default function ViewFacture() {
                     margin: 0.5cm;
                 }
                 
-                body * {
-                    visibility: hidden;
-                }
-                
-                #printable-invoice, #printable-invoice * {
-                    visibility: visible;
-                }
-                
-                #printable-invoice {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                    padding: 10px;
+                body {
                     background-color: white !important;
                     color: black !important;
-                    border: 1px solid black !important;
+                    font-size: 12pt;
+                    font-family: 'Arial', sans-serif;
                 }
                 
-                #printable-invoice h2 {
+                h2 {
                     font-size: 18px !important;
-                    margin-bottom: 5px !important;
-                }
-                
-                #printable-invoice h3 {
-                    font-size: 16px !important;
-                    margin-bottom: 5px !important;
-                }
-                
-                #printable-invoice p {
-                    font-size: 12px !important;
-                    margin-bottom: 3px !important;
-                }
-                
-                #printable-invoice .mb-6 {
                     margin-bottom: 10px !important;
                 }
                 
-                #printable-invoice .p-4 {
-                    padding: 8px !important;
+                h3 {
+                    font-size: 16px !important;
+                    margin-bottom: 8px !important;
                 }
                 
-                #printable-invoice .rounded-md {
-                    border-radius: 4px !important;
+                p {
+                    margin-bottom: 5px !important;
                 }
                 
-                .print-hide {
-                    display: none !important;
-                }
-                
-                .print-show {
-                    display: block !important;
-                }
-                
-                #printable-invoice table {
+                table {
                     width: 100% !important;
                     border-collapse: collapse !important;
+                    margin: 15px 0;
                 }
                 
-                #printable-invoice table th,
-                #printable-invoice table td {
+                table th, table td {
                     border: 1px solid #ddd !important;
                     padding: 8px !important;
                     text-align: left !important;
                 }
                 
-                #printable-invoice table th {
+                table th {
                     background-color: #f2f2f2 !important;
                     color: black !important;
                 }
@@ -101,11 +80,11 @@ export default function ViewFacture() {
         `;
         document.head.appendChild(style);
         
-        // Print
+        // Print the isolated content
         window.print();
         
-        // Remove print styles after printing
-        document.head.removeChild(style);
+        // Restore the original content after printing
+        document.body.innerHTML = originalContents;
     };
 
     useEffect(() => {

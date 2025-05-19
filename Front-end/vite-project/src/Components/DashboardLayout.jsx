@@ -9,7 +9,7 @@ export default function DashboardLayout() {
   const { user } = useAuth();
   const { darkMode } = useTheme();
   const [productsMenuOpen, setProductsMenuOpen] = useState(true); 
-  const [ordersMenuOpen, setOrdersMenuOpen] = useState(false);
+  const [clientOrdersMenuOpen, setClientOrdersMenuOpen] = useState(false);
   const [suppliersMenuOpen, setSuppliersMenuOpen] = useState(false);
   const [supplierOrdersMenuOpen, setSupplierOrdersMenuOpen] = useState(false);
   const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
@@ -21,8 +21,8 @@ export default function DashboardLayout() {
     if (location.pathname.includes('product') || location.pathname.includes('products')) {
       setProductsMenuOpen(true);
     }
-    if (location.pathname.includes('/order') || location.pathname.includes('/orders')) {
-      setOrdersMenuOpen(true);
+    if (location.pathname.includes('/clientorders')) {
+      setClientOrdersMenuOpen(true);
     }
     if (location.pathname.includes('/supplier') || location.pathname.includes('/suppliers') && !location.pathname.includes('supplier-orders')) {
       setSuppliersMenuOpen(true);
@@ -157,12 +157,12 @@ export default function DashboardLayout() {
             )}
           </div>
           
-          {/* Orders with dropdown */}
+          {/* Client Orders with dropdown */}
           <div className="relative">
             <button 
-              onClick={() => setOrdersMenuOpen(!ordersMenuOpen)}
+              onClick={() => setClientOrdersMenuOpen(!clientOrdersMenuOpen)}
               className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname.includes('/order') || location.pathname.includes('/orders')
+                location.pathname.includes('/clientorders')
                   ? `${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} shadow-md` 
                   : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
               }`}
@@ -171,15 +171,15 @@ export default function DashboardLayout() {
                 <FaShoppingCart className="mr-3" />
                 <span>Client Orders</span>
               </div>
-              {ordersMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
+              {clientOrdersMenuOpen ? <FaChevronDown className="ml-2" /> : <FaChevronRight className="ml-2" />}
             </button>
             
-            {ordersMenuOpen && (
+            {clientOrdersMenuOpen && (
               <div className="ml-4 mt-2 flex flex-col space-y-2 rounded-lg overflow-hidden">
                 <Link 
-                  to="/orders" 
+                  to="/clientorders" 
                   className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
-                    location.pathname === '/orders' 
+                    location.pathname === '/clientorders' 
                       ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
                       : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
                   }`}
@@ -189,28 +189,16 @@ export default function DashboardLayout() {
                   Display Orders
                 </Link>
                 <Link 
-                  to="/orders/add" 
+                  to="/clientorders/create" 
                   className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
-                    location.pathname === '/orders/add' 
+                    location.pathname === '/clientorders/create' 
                       ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
                       : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
                   }`}
                   onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
                   <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
-                  Add New Order
-                </Link>
-                <Link 
-                  to="/orders/multi" 
-                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
-                    location.pathname === '/orders/multi' 
-                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
-                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
-                  }`}
-                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-                >
-                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
-                  Multi-Product Order
+                  Create New Order
                 </Link>
               </div>
             )}

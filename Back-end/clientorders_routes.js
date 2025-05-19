@@ -99,6 +99,28 @@ router.post('/clientorders', async (req, res) => {
     if (!client_id || !date || !orderItems || orderItems.length === 0) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    
+    // Get client information
+    let clientName = null;
+    try {
+      const clientQuery = 'SELECT nom, prenom FROM clients WHERE id = $1';
+      const clientResult = await client.query(clientQuery, [client_id]);
+      
+      if (clientResult.rows.length > 0) {
+        const clientData = clientResult.rows[0];
+        clientName = `${clientData.prenom || ''} ${clientData.nom || ''}`.trim();
+        if (!clientName) {
+          clientName = `Client #${client_id}`;
+        }
+        console.log('Using client name for order:', clientName);
+      } else {
+        clientName = `Client #${client_id}`;
+        console.log('Client not found, using fallback name:', clientName);
+      }
+    } catch (err) {
+      console.error('Error getting client info:', err);
+      clientName = `Client #${client_id}`;
+    }
 
     // Get product information to use in the order
     const createdOrders = [];
@@ -114,8 +136,8 @@ router.post('/clientorders', async (req, res) => {
       // Create the order
       const orderQuery = `
         INSERT INTO commande 
-        (produit_id, nom_produit, quantite, date_commande, customer_name, userid, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (produit_id, nom_produit, quantite, date_commande, customer_name, userid, status, payment_method, reference, notes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id
       `;
       const orderValues = [
@@ -123,9 +145,12 @@ router.post('/clientorders', async (req, res) => {
         productName,
         item.quantity,
         date,
-        client_id,
+        clientName, // Use the client name we fetched, but store the client ID in the hidden attributes for future reference
         userId,
-        status || 'Pending'
+        status || 'Pending',
+        payment_method || 'Cash',
+        reference || `ORD-${Date.now()}`,
+        notes || ''
       ];
       
       const orderResult = await client.query(orderQuery, orderValues);
@@ -155,14 +180,12 @@ router.get('/clientorders/:id', async (req, res) => {
   try {
     const orderId = req.params.id;
     
-    // Get order with product and client information
+    // Get order with product information only - we'll handle client information separately
     const orderQuery = `
       SELECT c.*, 
-             p.nom as product_name, p.prix as product_price, p.description as product_description,
-             cl.nom as client_name, cl.prenom as client_prenom, cl.email as client_email, cl.telephone as client_phone, cl.adresse as client_address
+             p.nom as product_name, p.prix as product_price, p.description as product_description
       FROM commande c
       LEFT JOIN produit p ON c.produit_id = p.id
-      LEFT JOIN clients cl ON c.customer_name::integer = cl.id
       WHERE c.id = $1
     `;
     
@@ -180,6 +203,44 @@ router.get('/clientorders/:id', async (req, res) => {
     console.log('Raw order object:', JSON.stringify(order, null, 2));
     console.log('Product price from query:', order.product_price);
     console.log('Prix from query:', order.prix);
+    
+    // The customer_name field should contain the client ID
+    // Let's fetch the full client information from the clients table
+    if (order.customer_name) {
+      try {
+        // Add debug log to see what customer_name contains
+        console.log('Looking up client with ID:', order.customer_name);
+
+        // Query for client details using customer_name as client_id
+        const clientQuery = 'SELECT * FROM clients WHERE id = $1';
+        const clientResult = await executeQuery(clientQuery, [order.customer_name]);
+        
+        if (clientResult.rows.length > 0) {
+          // Found matching client - extract all details
+          const clientData = clientResult.rows[0];
+          console.log('Found client details:', clientData);
+          
+          // Store the client information in order object
+          order.client_id = clientData.id;
+          order.client_nom = clientData.nom;
+          order.client_prenom = clientData.prenom;
+          order.client_email = clientData.email;
+          order.client_phone = clientData.telephone;
+          order.client_address = clientData.adresse;
+          
+          // Format the display name by combining first and last name
+          const fullName = `${clientData.prenom || ''} ${clientData.nom || ''}`.trim();
+          order.client_display_name = fullName || `Client #${order.customer_name}`;
+          
+          console.log('Client display name set to:', order.client_display_name);
+        } else {
+          console.log('No client found with ID:', order.customer_name);
+        }
+      } catch (clientErr) {
+        // Just log the error but don't fail the whole request
+        console.error('Error fetching client details:', clientErr);
+      }
+    }
     
     // Check if this is a related order (part of a multi-product order)
     let relatedOrders = [];
@@ -269,11 +330,15 @@ router.get('/clientorders/:id', async (req, res) => {
     const responseOrder = {
       id: order.id,
       date: order.date_commande,
-      client_name: clientName,
-      client_id: order.customer_name, // Keep the original ID for reference
-      client_email: clientEmail,
-      client_phone: clientPhone,
-      client_address: clientAddress,
+      // Include client information from the client details lookup
+      client_name: order.client_display_name || clientName,
+      client_id: order.client_id || order.customer_name, // Keep the original ID for reference
+      client_email: order.client_email || clientEmail,
+      client_phone: order.client_phone || clientPhone,
+      client_address: order.client_address || clientAddress,
+      client_prenom: order.client_prenom, // Include first name if available
+      client_nom: order.client_nom, // Include last name if available
+      // Include order details
       status: order.status || 'Pending',
       payment_method: order.payment_method || 'Cash', // Default payment method
       reference: order.reference || `ORD-${order.id}`,

@@ -14,10 +14,6 @@ import DashboardLayout from './Components/DashboardLayout'
 import AddProduct from './Components/Dashboard components/Product/AddProduct'
 import EditProduct from './Components/Dashboard components/Product/EditProduct'
 import ViewProduct from './Components/Dashboard components/Product/ViewProduct'
-import DisplayOrders from './Components/Dashboard components/Orders/DisplayOrders'
-import AddOrders from './Components/Dashboard components/Orders/AddOrders'
-import EditOrders from './Components/Dashboard components/Orders/EditOrders'
-import ViewOrder from './Components/Dashboard components/Orders/ViewOrder'
 import DisplaySuppliers from './Components/Dashboard components/Suppliers/DisplaySuppliers'
 import AddSupplier from './Components/Dashboard components/Suppliers/AddSupplier'
 import EditSupplier from './Components/Dashboard components/Suppliers/EditSupplier'
@@ -39,7 +35,10 @@ import DisplaySupplierOrders from './Components/Dashboard components/SupplierOrd
 import AddSupplierOrder from './Components/Dashboard components/SupplierOrders/AddSupplierOrder'
 import EditSupplierOrder from './Components/Dashboard components/SupplierOrders/EditSupplierOrder'
 import ViewSupplierOrder from './Components/Dashboard components/SupplierOrders/ViewSupplierOrder'
-import MultiClientOrders from './Components/Dashboard components/Orders/MultiClientOrders'
+import DisplayClientOrders from './Components/Dashboard components/ClientOrders/DisplayClientOrders'
+import CreateClientOrder from './Components/Dashboard components/ClientOrders/CreateClientOrder'
+import ViewClientOrder from './Components/Dashboard components/ClientOrders/ViewClientOrder'
+import EditClientOrder from './Components/Dashboard components/ClientOrders/EditClientOrder'
 
 
 function App() {
@@ -70,12 +69,11 @@ function App() {
                 <Route path="/products/add" element={<AddProduct />} />
                 <Route path="/products/edit/:id" element={<EditProduct />} />
                 <Route path="/products/view/:id" element={<ViewProduct />} />
-                {/* Order Routes */}
-                <Route path="/orders" element={<DisplayOrders />} />
-                <Route path="/orders/add" element={<AddOrders />} />
-                <Route path="/orders/multi" element={<MultiClientOrders />} />
-                <Route path="/orders/edit/:id" element={<EditOrders />} />
-                <Route path="/orders/view/:id" element={<ViewOrder />} />
+                {/* Client Order Routes */}
+                <Route path="/clientorders" element={<DisplayClientOrders />} />
+                <Route path="/clientorders/create" element={<CreateClientOrder />} />
+                <Route path="/clientorders/view/:id" element={<ViewClientOrder />} />
+                <Route path="/clientorders/edit/:id" element={<EditClientOrder />} />
                 {/* Supplier Routes */}
                 <Route path="/suppliers" element={<DisplaySuppliers />} />
                 <Route path="/suppliers/add" element={<AddSupplier />} />

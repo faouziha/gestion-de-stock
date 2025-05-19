@@ -231,7 +231,7 @@ export default function DisplaySupplierOrders() {
                     >
                       Status {getSortIcon('status')}
                     </th>
-                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                    <th scope="col" className={`px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Actions
                     </th>
                   </tr>
@@ -273,18 +273,27 @@ export default function DisplaySupplierOrders() {
                                 {order.status || 'Pending'}
                               </span>
                             </div>
-                            <div className="flex justify-center space-x-4 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <Link to={`/view-supplier-order/${order.id}`} className="text-blue-500 hover:text-blue-700">
-                                <FaEye className="text-lg" />
-                              </Link>
-                              <Link to={`/edit-supplier-order/${order.id}`} className="text-yellow-500 hover:text-yellow-700">
-                                <FaEdit className="text-lg" />
-                              </Link>
+                            <div className="flex justify-center space-x-3 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <button 
+                                onClick={() => navigate(`/view-supplier-order/${order.id}`)}
+                                className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                                aria-label="View order"
+                              >
+                                <FaEye className="inline mr-1" /> View
+                              </button>
+                              <button 
+                                onClick={() => navigate(`/edit-supplier-order/${order.id}`)}
+                                className="text-blue-600 hover:text-blue-900 transition-colors"
+                                aria-label="Edit order"
+                              >
+                                <FaEdit className="inline mr-1" /> Edit
+                              </button>
                               <button
                                 onClick={() => handleDelete(order.id)}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-600 hover:text-red-900 transition-colors"
+                                aria-label="Delete order"
                               >
-                                <FaTrash className="text-lg" />
+                                <FaTrash className="inline mr-1" /> Delete
                               </button>
                             </div>
                           </div>
@@ -316,19 +325,28 @@ export default function DisplaySupplierOrders() {
                           {order.status || 'Pending'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link to={`/view-supplier-order/${order.id}`} className="text-blue-500 hover:text-blue-700">
-                            <FaEye className="text-lg" />
-                          </Link>
-                          <Link to={`/edit-supplier-order/${order.id}`} className="text-yellow-500 hover:text-yellow-700">
-                            <FaEdit className="text-lg" />
-                          </Link>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <div className="flex justify-center space-x-3">
+                          <button 
+                            onClick={() => navigate(`/view-supplier-order/${order.id}`)}
+                            className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                            aria-label="View order"
+                          >
+                            <FaEye className="inline mr-1" /> View
+                          </button>
+                          <button 
+                            onClick={() => navigate(`/edit-supplier-order/${order.id}`)}
+                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                            aria-label="Edit order"
+                          >
+                            <FaEdit className="inline mr-1" /> Edit
+                          </button>
                           <button
                             onClick={() => handleDelete(order.id)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-600 hover:text-red-900 transition-colors"
+                            aria-label="Delete order"
                           >
-                            <FaTrash className="text-lg" />
+                            <FaTrash className="inline mr-1" /> Delete
                           </button>
                         </div>
                       </td>
