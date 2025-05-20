@@ -1,43 +1,71 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaEdit, FaTrash, FaEye, FaPlus, FaSearch } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaEye, FaPlus, FaSearch, FaFilter, FaChevronDown } from 'react-icons/fa'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
 
 export default function DisplayProduct() {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showFilterMenu, setShowFilterMenu] = useState(false);
+    const [filterType, setFilterType] = useState(null);
+    const [activeFilters, setActiveFilters] = useState({
+        category: null,
+        price: null,
+        stock: null
+    });
+    const filterMenuRef = useRef(null);
     const { user } = useAuth();
     const { darkMode } = useTheme();
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                // Pass the user ID as a query parameter to fetch only this user's products
-                const response = await axios.get(`http://localhost:3000/produit?userId=${user.id}`);
+                // Fetch products
+                const productsResponse = await axios.get(`http://localhost:3000/produit?userId=${user.id}`);
                 
                 // Filter products by user_id if needed
                 const filteredProducts = user.role === 'admin' 
-                    ? response.data 
-                    : response.data.filter(product => product.user_id === user.id);
+                    ? productsResponse.data 
+                    : productsResponse.data.filter(product => product.user_id === user.id);
                 
                 setProducts(filteredProducts);
+                
+                // Fetch categories
+                const categoriesResponse = await axios.get(`http://localhost:3000/categories?userId=${user.id}`);
+                setCategories(categoriesResponse.data);
+                
                 setError(null);
             } catch (error) {
-                console.error("Error fetching products:", error);
-                setError("Failed to load products. Please try again.");
+                console.error("Error fetching data:", error);
+                setError("Failed to load data. Please try again.");
             } finally {
                 setLoading(false);
             }
         };
         
-        fetchProducts();
+        fetchData();
     }, [user.id, user.role]);
+    
+    // Close filter menu when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
+                setShowFilterMenu(false);
+            }
+        }
+        
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this product?")) {
@@ -75,11 +103,220 @@ export default function DisplayProduct() {
                             </div>
                         </div>
                         
+                        {/* Filter Dropdown */}
+                        <div className="relative" ref={filterMenuRef}>
+                            <button 
+                                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border ${
+                                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'
+                                } w-full sm:w-auto`}
+                            >
+                                <FaFilter className={`${Object.values(activeFilters).some(v => v !== null) ? 'text-blue-500' : ''}`} />
+                                <span>Filter</span>
+                                <FaChevronDown className="text-xs" />
+                            </button>
+                            
+                            {showFilterMenu && (
+                                <div className={`absolute z-10 mt-1 w-56 rounded-md shadow-lg ${
+                                    darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                                } right-0`}>
+                                    <div className="py-1">
+                                        {/* Filter by Category */}
+                                        <div 
+                                            className={`px-4 py-2 text-sm ${
+                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                            } cursor-pointer flex justify-between items-center group`}
+                                            onMouseEnter={() => setFilterType('category')}
+                                        >
+                                            <span>Filter by Category</span>
+                                            <FaChevronDown className="text-xs" />
+                                            
+                                            {filterType === 'category' && (
+                                                <div className={`absolute left-full top-0 ml-0.5 w-48 rounded-md shadow-lg ${
+                                                    darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                                                }`}>
+                                                    <div className="py-1">
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.category === null ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, category: null});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            All Categories
+                                                        </div>
+                                                        {categories.map(category => (
+                                                            <div 
+                                                                key={category.id}
+                                                                className={`px-4 py-2 text-sm ${
+                                                                    darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                                } cursor-pointer ${activeFilters.category === category.id ? 'font-bold' : ''}`}
+                                                                onClick={() => {
+                                                                    setActiveFilters({...activeFilters, category: category.id});
+                                                                    setShowFilterMenu(false);
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center">
+                                                                    <div 
+                                                                        className="w-3 h-3 rounded-full mr-2" 
+                                                                        style={{ backgroundColor: category.color || '#3B82F6' }}
+                                                                    ></div>
+                                                                    {category.name}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Filter by Price */}
+                                        <div 
+                                            className={`px-4 py-2 text-sm ${
+                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                            } cursor-pointer flex justify-between items-center`}
+                                            onMouseEnter={() => setFilterType('price')}
+                                        >
+                                            <span>Filter by Price</span>
+                                            <FaChevronDown className="text-xs" />
+                                            
+                                            {filterType === 'price' && (
+                                                <div className={`absolute left-full top-0 ml-0.5 w-48 rounded-md shadow-lg ${
+                                                    darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                                                }`}>
+                                                    <div className="py-1">
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.price === null ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, price: null});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            All Prices
+                                                        </div>
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.price === 'low' ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, price: 'low'});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            Low to High
+                                                        </div>
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.price === 'high' ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, price: 'high'});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            High to Low
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Filter by Stock */}
+                                        <div 
+                                            className={`px-4 py-2 text-sm ${
+                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                            } cursor-pointer flex justify-between items-center`}
+                                            onMouseEnter={() => setFilterType('stock')}
+                                        >
+                                            <span>Filter by Stock</span>
+                                            <FaChevronDown className="text-xs" />
+                                            
+                                            {filterType === 'stock' && (
+                                                <div className={`absolute left-full top-0 ml-0.5 w-48 rounded-md shadow-lg ${
+                                                    darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                                                }`}>
+                                                    <div className="py-1">
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.stock === null ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, stock: null});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            All Stock Levels
+                                                        </div>
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.stock === 'instock' ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, stock: 'instock'});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            In Stock ({'>'}0)
+                                                        </div>
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.stock === 'low' ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, stock: 'low'});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            Low Stock (≤10)
+                                                        </div>
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.stock === 'outofstock' ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, stock: 'outofstock'});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            Out of Stock (0)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Reset Filters */}
+                                        {Object.values(activeFilters).some(v => v !== null) && (
+                                            <div 
+                                                className={`px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer ${
+                                                    darkMode ? 'hover:bg-gray-700' : 'hover:bg-blue-50'
+                                                }`}
+                                                onClick={() => {
+                                                    setActiveFilters({
+                                                        category: null,
+                                                        price: null,
+                                                        stock: null
+                                                    });
+                                                    setShowFilterMenu(false);
+                                                }}
+                                            >
+                                                Reset All Filters
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
                         <Link 
                             to="/products/add" 
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center w-full sm:w-auto justify-center sm:justify-start"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md transition-colors flex items-center w-full sm:w-auto justify-center text-sm sm:text-base"
                         >
-                            <FaPlus className="mr-2" />
+                            <FaPlus className="mr-1 sm:mr-2" size={14} />
                             <span>Add New Product</span>
                         </Link>
                     </div>
@@ -106,9 +343,11 @@ export default function DisplayProduct() {
                     </div>
                 )}
                 
-                {/* Filter products based on search term */}
+                {/* Apply filters and search */}
                 {(() => {
-                    const filteredProducts = products.filter(product => {
+                    // Apply all filters
+                    let filteredProducts = products.filter(product => {
+                        // Search filter
                         const searchFields = [
                             product.nom,
                             product.description,
@@ -117,8 +356,31 @@ export default function DisplayProduct() {
                             product.prix?.toString()
                         ].filter(Boolean).join(' ').toLowerCase();
                         
-                        return searchFields.includes(searchTerm.toLowerCase());
+                        const matchesSearch = searchFields.includes(searchTerm.toLowerCase());
+                        
+                        // Category filter
+                        const matchesCategory = activeFilters.category === null || 
+                            (product.category_id && product.category_id.toString() === activeFilters.category.toString());
+                        
+                        // Stock filter
+                        let matchesStock = true;
+                        if (activeFilters.stock === 'instock') {
+                            matchesStock = parseInt(product.total) > 0;
+                        } else if (activeFilters.stock === 'low') {
+                            matchesStock = parseInt(product.total) > 0 && parseInt(product.total) <= 10;
+                        } else if (activeFilters.stock === 'outofstock') {
+                            matchesStock = parseInt(product.total) === 0;
+                        }
+                        
+                        return matchesSearch && matchesCategory && matchesStock;
                     });
+                    
+                    // Apply price sorting
+                    if (activeFilters.price === 'low') {
+                        filteredProducts.sort((a, b) => parseFloat(a.prix) - parseFloat(b.prix));
+                    } else if (activeFilters.price === 'high') {
+                        filteredProducts.sort((a, b) => parseFloat(b.prix) - parseFloat(a.prix));
+                    }
                     
                     if (!loading && filteredProducts.length === 0 && !error) {
                         return (
@@ -143,17 +405,42 @@ export default function DisplayProduct() {
                 
                 {/* Display filtered products */}
                 {(() => {
-                    const filteredProducts = products.filter(product => {
+                    // Apply all filters
+                    let filteredProducts = products.filter(product => {
+                        // Search filter
                         const searchFields = [
                             product.nom,
-                            product.serial_num,
                             product.description,
+                            product.serial_num,
                             product.numero_serie,
                             product.prix?.toString()
                         ].filter(Boolean).join(' ').toLowerCase();
                         
-                        return searchFields.includes(searchTerm.toLowerCase());
+                        const matchesSearch = searchFields.includes(searchTerm.toLowerCase());
+                        
+                        // Category filter
+                        const matchesCategory = activeFilters.category === null || 
+                            (product.category_id && product.category_id.toString() === activeFilters.category.toString());
+                        
+                        // Stock filter
+                        let matchesStock = true;
+                        if (activeFilters.stock === 'instock') {
+                            matchesStock = parseInt(product.total) > 0;
+                        } else if (activeFilters.stock === 'low') {
+                            matchesStock = parseInt(product.total) > 0 && parseInt(product.total) <= 10;
+                        } else if (activeFilters.stock === 'outofstock') {
+                            matchesStock = parseInt(product.total) === 0;
+                        }
+                        
+                        return matchesSearch && matchesCategory && matchesStock;
                     });
+                    
+                    // Apply price sorting
+                    if (activeFilters.price === 'low') {
+                        filteredProducts.sort((a, b) => parseFloat(a.prix) - parseFloat(b.prix));
+                    } else if (activeFilters.price === 'high') {
+                        filteredProducts.sort((a, b) => parseFloat(b.prix) - parseFloat(a.prix));
+                    }
                     
                     if (filteredProducts.length > 0) {
                         return (

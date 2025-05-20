@@ -177,36 +177,36 @@ export default function AddCategory() {
                             </div>
                         </div>
                         
-                        <div className="flex justify-end gap-3">
+                        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6">
                             <button
                                 type="button"
                                 onClick={() => navigate('/categories')}
-                                className={`py-2 px-4 rounded-md ${
+                                className={`py-2 px-3 sm:px-4 rounded-md ${
                                     darkMode 
                                         ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
                                         : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                                } transition-colors flex items-center`}
+                                } transition-colors flex items-center justify-center w-full sm:w-auto text-sm sm:text-base`}
                             >
-                                <FaTimes className="mr-2" />
+                                <FaTimes className="mr-1 sm:mr-2" size={14} />
                                 Cancel
                             </button>
                             
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className={`py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center ${
+                                className={`py-2 px-3 sm:px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center justify-center w-full sm:w-auto text-sm sm:text-base ${
                                     loading ? 'opacity-70 cursor-not-allowed' : ''
                                 }`}
                             >
                                 {loading ? (
                                     <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                                        Saving...
+                                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-1 sm:mr-2"></div>
+                                        <span>Saving...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <FaSave className="mr-2" />
-                                        Save Category
+                                        <FaSave className="mr-1 sm:mr-2" size={14} />
+                                        <span>Save Category</span>
                                     </>
                                 )}
                             </button>

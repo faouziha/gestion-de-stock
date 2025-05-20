@@ -76,9 +76,9 @@ export default function DisplayCategories() {
                         
                         <Link 
                             to="/categories/add" 
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center w-full sm:w-auto justify-center sm:justify-start"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md transition-colors flex items-center w-full sm:w-auto justify-center text-sm sm:text-base"
                         >
-                            <FaPlus className="mr-2" />
+                            <FaPlus className="mr-1 sm:mr-2" size={14} />
                             <span>Add New Category</span>
                         </Link>
                     </div>
@@ -124,9 +124,9 @@ export default function DisplayCategories() {
                                 <p className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-4`}>You haven't added any categories yet.</p>
                                 <Link
                                     to="/categories/add"
-                                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center"
                                 >
-                                    <FaPlus className="mr-2" />
+                                    <FaPlus className="mr-1 sm:mr-2" size={14} />
                                     Add Your First Category
                                 </Link>
                             </div>
@@ -174,21 +174,24 @@ export default function DisplayCategories() {
                                             <div className="flex justify-end space-x-2 mt-2">
                                                 <Link 
                                                     to={`/categories/view/${category.id}`} 
-                                                    className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                                    className={`p-1.5 sm:p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                                    aria-label="View category"
                                                 >
-                                                    <FaEye className={`${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                                                    <FaEye className={`${darkMode ? 'text-blue-400' : 'text-blue-600'} text-sm sm:text-base`} />
                                                 </Link>
                                                 <Link 
                                                     to={`/categories/edit/${category.id}`} 
-                                                    className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                                    className={`p-1.5 sm:p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                                    aria-label="Edit category"
                                                 >
-                                                    <FaEdit className={`${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                                                    <FaEdit className={`${darkMode ? 'text-green-400' : 'text-green-600'} text-sm sm:text-base`} />
                                                 </Link>
                                                 <button 
                                                     onClick={() => handleDelete(category.id)} 
-                                                    className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                                    className={`p-1.5 sm:p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                                    aria-label="Delete category"
                                                 >
-                                                    <FaTrash className={`${darkMode ? 'text-red-400' : 'text-red-600'}`} />
+                                                    <FaTrash className={`${darkMode ? 'text-red-400' : 'text-red-600'} text-sm sm:text-base`} />
                                                 </button>
                                             </div>
                                         </div>
