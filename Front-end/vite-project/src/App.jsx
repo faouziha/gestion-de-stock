@@ -39,6 +39,10 @@ import DisplayClientOrders from './Components/Dashboard components/ClientOrders/
 import CreateClientOrder from './Components/Dashboard components/ClientOrders/CreateClientOrder'
 import ViewClientOrder from './Components/Dashboard components/ClientOrders/ViewClientOrder'
 import EditClientOrder from './Components/Dashboard components/ClientOrders/EditClientOrder'
+import DisplayCategories from './Components/Dashboard components/Categories/DisplayCategories'
+import AddCategory from './Components/Dashboard components/Categories/AddCategory'
+import EditCategory from './Components/Dashboard components/Categories/EditCategory'
+import ViewCategory from './Components/Dashboard components/Categories/ViewCategory'
 
 
 function App() {
@@ -98,6 +102,11 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 {/* Admin Route */}
                 <Route path="/admin" element={<Admin />} />
+                {/* Category Routes */}
+                <Route path="/categories" element={<DisplayCategories />} />
+                <Route path="/categories/add" element={<AddCategory />} />
+                <Route path="/categories/edit/:id" element={<EditCategory />} />
+                <Route path="/categories/view/:id" element={<ViewCategory />} />
                 {/* Add more dashboard routes here */}
               </Route>
             </Routes>

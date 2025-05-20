@@ -178,6 +178,9 @@ export default function DisplayProduct() {
                                         Serial Number
                                     </th>
                                     <th scope="col" className={`px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                        Category
+                                    </th>
+                                    <th scope="col" className={`px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                         Actions
                                     </th>
                                 </tr>
@@ -220,7 +223,24 @@ export default function DisplayProduct() {
                                         <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'} text-center`}>
                                             {product.serial_num || 'N/A'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                                            {product.category_name ? (
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    <div 
+                                                        className="w-3 h-3 rounded-full" 
+                                                        style={{ backgroundColor: product.category_color || '#3B82F6' }}
+                                                    ></div>
+                                                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                        {product.category_name}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className={`text-sm italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                    None
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                             <div className="flex justify-center space-x-3">
                                                 <button 
                                                     onClick={() => navigate(`/products/view/${product.id}`)}

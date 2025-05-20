@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
-import { FaArrowLeft, FaEdit, FaSpinner } from 'react-icons/fa'
+import { FaArrowLeft, FaEdit, FaSpinner, FaTag } from 'react-icons/fa'
 
 export default function ViewProduct() {
     const { id } = useParams();
@@ -153,6 +153,26 @@ export default function ViewProduct() {
                                             <p className={`mt-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{product.serial_num}</p>
                                         </div>
                                     )}
+                                    
+                                    {/* Category Information */}
+                                    <div className="mb-4">
+                                        <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Category</h3>
+                                        {product.category_name ? (
+                                            <div className="mt-2 flex items-center">
+                                                <div 
+                                                    className="w-4 h-4 rounded-full mr-2" 
+                                                    style={{ backgroundColor: product.category_color || '#3B82F6' }}
+                                                ></div>
+                                                <span className={`${darkMode ? 'text-white' : 'text-gray-800'} font-medium`}>
+                                                    {product.category_name}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <p className={`mt-1 italic ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                <FaTag className="inline mr-1" /> No category assigned
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                                 
                                 {/* Right Column */}
