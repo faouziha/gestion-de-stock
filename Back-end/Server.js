@@ -4,6 +4,7 @@ const pg = require("pg");
 const bcrypt = require("bcrypt");
 const multiClientOrdersRouter = require("./MultiClientOrders");
 const clientOrdersRouter = require("./clientorders_routes");
+const { router: orderDetailsRouter } = require("./order_details_routes");
 const categoriesSetupRouter = require("./categories_setup");
 const categoriesRouter = require("./categories_api");
 require('dotenv').config();
@@ -48,6 +49,9 @@ app.use('/multi-client-order', multiClientOrdersRouter);
 
 // Register the client orders router
 app.use(clientOrdersRouter);
+
+// Register the order details router
+app.use(orderDetailsRouter);
 
 // Register the categories setup router
 app.use(categoriesSetupRouter);

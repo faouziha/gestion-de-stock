@@ -132,9 +132,17 @@ const ViewClientOrder = () => {
               ${orderItemsHtml}
             </tbody>
             <tfoot>
-              <tr class="total-row">
-                <td colspan="3" style="text-align: right">Total:</td>
-                <td style="text-align: right">$${orderTotal}</td>
+              <tr>
+                <td colspan="3" style="text-align: right; padding: 8px;">Subtotal:</td>
+                <td style="text-align: right; padding: 8px;">$${calculateSubtotal(order.orderItems).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align: right; padding: 8px;">Tax (10%):</td>
+                <td style="text-align: right; padding: 8px;">$${calculateTax(calculateSubtotal(order.orderItems)).toFixed(2)}</td>
+              </tr>
+              <tr style="font-weight: bold;">
+                <td colspan="3" style="text-align: right; padding: 8px; border-top: 1px solid #ddd;">Total:</td>
+                <td style="text-align: right; padding: 8px; border-top: 1px solid #ddd;">$${orderTotal}</td>
               </tr>
             </tfoot>
           </table>
@@ -277,11 +285,23 @@ const ViewClientOrder = () => {
     return (price * quantity).toFixed(2);
   };
   
-  const calculateOrderTotal = (items) => {
-    if (!items || !items.length) return '0.00';
+  const calculateSubtotal = (items) => {
+    if (!items || !items.length) return 0;
     return items.reduce((sum, item) => {
       return sum + parseFloat(calculateItemTotal(item));
-    }, 0).toFixed(2);
+    }, 0);
+  };
+  
+  const calculateTax = (subtotal) => {
+    return subtotal * 0.1; // 10% tax
+  };
+  
+  const calculateOrderTotal = (items) => {
+    if (!items || !items.length) return '0.00';
+    const subtotal = calculateSubtotal(items);
+    const tax = calculateTax(subtotal);
+    const total = subtotal + tax;
+    return total.toFixed(2);
   };
   
   if (loading) {
@@ -309,15 +329,15 @@ const ViewClientOrder = () => {
   }
   
   return (
-    <div id="print-content" className={`print-container p-4 md:p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+    <div id="print-content" className={`print-container p-4 md:p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} overflow-hidden`}>
       {/* Header - Not visible when printing */}
       <div className="no-print flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
-        <div className="flex items-center mb-2 sm:mb-0 w-full sm:w-auto">
+        <div className="flex flex-col xs:flex-row xs:items-center mb-2 sm:mb-0 w-full sm:w-auto">
           <button 
             onClick={() => navigate('/clientorders')}
-            className="mr-4 text-blue-500 hover:text-blue-700"
+            className="mb-2 xs:mb-0 mr-0 xs:mr-4 text-blue-500 hover:text-blue-700 flex items-center"
           >
-            <FaArrowLeft className="inline mr-1" /> Back to Orders
+            <FaArrowLeft className="mr-1" /> <span>Back to Orders</span>
           </button>
           <h1 className="text-xl font-bold">Order #{order.id}</h1>
         </div>
@@ -326,13 +346,13 @@ const ViewClientOrder = () => {
             onClick={handlePrint}
             className="flex-1 sm:flex-grow-0 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded flex items-center justify-center hover:bg-blue-600 text-sm sm:text-base transition-colors"
           >
-            <FaPrint className="mr-1 sm:mr-2" /> <span>Print</span>
+            <FaPrint className="mr-1 sm:mr-2" /> <span className="hidden xs:inline">Print</span>
           </button>
           <button 
             onClick={() => navigate(`/clientorders/edit/${id}`)}
             className="flex-1 sm:flex-grow-0 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded flex items-center justify-center hover:bg-blue-700 text-sm sm:text-base transition-colors"
           >
-            <FaEdit className="mr-1 sm:mr-2" /> <span>Edit</span>
+            <FaEdit className="mr-1 sm:mr-2" /> <span className="hidden xs:inline">Edit</span>
           </button>
         </div>
       </div>
@@ -344,10 +364,10 @@ const ViewClientOrder = () => {
         <p style={{ textAlign: 'center' }}>Date: {formatDate(order.date)}</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Order Details */}
-        <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} shadow`}>
-          <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-300">Order Details</h2>
+        <div className={`p-3 sm:p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} shadow`}>
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 pb-2 border-b border-gray-300">Order Details</h2>
           <div className="space-y-2">
             <p><span className="font-medium">Order ID:</span> {order.id}</p>
             <p><span className="font-medium">Date:</span> {formatDate(order.date)}</p>
@@ -369,8 +389,8 @@ const ViewClientOrder = () => {
         </div>
         
         {/* Client Information */}
-        <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} shadow`}>
-          <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-300">Client Information</h2>
+        <div className={`p-3 sm:p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} shadow`}>
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 pb-2 border-b border-gray-300">Client Information</h2>
           <div className="space-y-2">
             <p>
               <span className="font-medium">Name:</span> {
@@ -405,37 +425,49 @@ const ViewClientOrder = () => {
       </div>
       
       {/* Order Items */}
-      <div className={`mt-6 p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} shadow`}>
-        <h2 className="text-lg font-semibold mb-4">Order Items</h2>
-        <div className="overflow-x-auto">
+      <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} shadow`}>
+        <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Order Items</h2>
+        <div className="overflow-x-auto -mx-3 sm:-mx-4 px-3 sm:px-4">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className={darkMode ? 'bg-gray-800' : 'bg-gray-100'}>
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-medium">Product</th>
-                <th className="px-4 py-2 text-right text-sm font-medium">Price</th>
-                <th className="px-4 py-2 text-right text-sm font-medium">Quantity</th>
-                <th className="px-4 py-2 text-right text-sm font-medium">Total</th>
+                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium">Product</th>
+                <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Price</th>
+                <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Qty</th>
+                <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {order.orderItems && order.orderItems.map((item, index) => (
                 <tr key={index} className={index % 2 === 0 ? (darkMode ? 'bg-gray-600' : 'bg-white') : (darkMode ? 'bg-gray-700' : 'bg-gray-50')}>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{item.product_name || `Product ${item.product_id}`}</div>
-                    <div className="text-xs text-gray-500">{item.product_id && `ID: ${item.product_id}`}</div>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">
+                    <div className="font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-full">{item.product_name || `Product ${item.product_id}`}</div>
+                    <div className="text-xs text-gray-500 hidden sm:block">{item.product_id && `ID: ${item.product_id}`}</div>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">
                     ${parseFloat(item.price || item.unit_price || item.product_price || 0).toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 text-right">{item.quantity || item.quantite || 0}</td>
-                  <td className="px-4 py-3 text-right font-medium">${calculateItemTotal(item)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">{item.quantity || item.quantite || 0}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-xs sm:text-sm">${calculateItemTotal(item)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className={`border-t-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-                <td colSpan="3" className="px-4 py-3 text-right font-bold">Total:</td>
-                <td className="px-4 py-3 text-right font-bold">
+              <tr className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                <td colSpan="3" className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">Subtotal:</td>
+                <td className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">
+                  ${calculateSubtotal(order.orderItems).toFixed(2)}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan="3" className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">Tax (10%):</td>
+                <td className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">
+                  ${calculateTax(calculateSubtotal(order.orderItems)).toFixed(2)}
+                </td>
+              </tr>
+              <tr className={`border-t-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'} font-bold`}>
+                <td colSpan="3" className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs sm:text-sm">Total:</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs sm:text-sm">
                   ${calculateOrderTotal(order.orderItems)}
                 </td>
               </tr>

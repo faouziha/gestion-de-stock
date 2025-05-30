@@ -39,13 +39,7 @@ router.get('/clientorders', async (req, res) => {
       SELECT c.*, cl.nom as client_lastname, cl.prenom as client_firstname,
              cl.email as client_email, cl.telephone as client_phone
       FROM commande c
-      LEFT JOIN clients cl ON (
-        CASE WHEN c.customer_name ~ E'^\\d+$' THEN
-          cl.id = c.customer_name::integer
-        ELSE
-          FALSE
-        END
-      )
+      LEFT JOIN clients cl ON c.customer_name::integer = cl.id
       WHERE c.userid = $1 AND (c.is_parent IS NULL OR c.is_parent = false)
       ORDER BY c.date_commande DESC
     `;

@@ -290,31 +290,9 @@ const CreateClientOrder = () => {
   );
 
   return (
-    <div className={`p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-xl sm:text-2xl font-bold">Create New Order</h1>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded flex items-center justify-center ${
-              submitting 
-                ? 'bg-gray-500 cursor-not-allowed' 
-                : 'bg-blue-500 hover:bg-blue-600'
-            } text-white transition-colors text-sm sm:text-base flex-1 sm:flex-initial`}
-          >
-            <FaSave className="mr-1 sm:mr-2" />
-            {submitting ? 'Creating...' : 'Save Order'}
-          </button>
-          <button
-            onClick={handleCancel}
-            disabled={submitting}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-500 text-white rounded flex items-center justify-center hover:bg-gray-600 transition-colors text-sm sm:text-base flex-1 sm:flex-initial"
-          >
-            <FaTimes className="mr-1 sm:mr-2" />
-            Cancel
-          </button>
-        </div>
+    <div className={`p-4 md:p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
+        <h1 className="text-2xl font-bold">Create New Order</h1>
       </div>
 
       {error && (
@@ -323,7 +301,7 @@ const CreateClientOrder = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form id="order-form" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
           {/* Client Selection */}
           <div>
@@ -635,6 +613,31 @@ const CreateClientOrder = () => {
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Action Buttons - Bottom of Page */}
+        <div className="flex flex-col sm:flex-row justify-end items-center gap-3 mt-8 mb-4">
+          <button
+            type="submit"
+            form="order-form"
+            disabled={submitting}
+            className={`px-4 py-2 rounded-lg flex items-center justify-center ${
+              submitting 
+                ? 'bg-gray-500 cursor-not-allowed' 
+                : 'bg-blue-500 hover:bg-blue-600'
+            } text-white transition-colors text-base w-full sm:w-auto order-2 sm:order-1`}
+          >
+            <FaSave className="mr-2" />
+            {submitting ? 'Creating...' : 'Save Order'}
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={submitting}
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg flex items-center justify-center hover:bg-gray-600 transition-colors text-base w-full sm:w-auto order-1 sm:order-2"
+          >
+            <FaTimes className="mr-2" />
+            Cancel
+          </button>
         </div>
       </form>
     </div>

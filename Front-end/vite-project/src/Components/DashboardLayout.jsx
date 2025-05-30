@@ -54,9 +54,9 @@ export default function DashboardLayout() {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
       }
+      // Don't automatically close sidebar on resize to mobile
+      // This allows users to keep the sidebar open if they want
     };
 
     // Set initial state based on screen size
@@ -67,7 +67,7 @@ export default function DashboardLayout() {
   }, []);
 
   return (
-    <div className={`flex mt-16 relative ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`flex mt-16 relative ${darkMode ? 'bg-gray-900' : 'bg-gray-100'} min-h-[calc(100vh-4rem)]`}>
       {/* Mobile Sidebar Toggle */}
       <button 
         className="md:hidden fixed bottom-4 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
@@ -89,9 +89,9 @@ export default function DashboardLayout() {
       <div 
         className={`${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 fixed md:static top-16 left-0 w-64 ${
+        } md:translate-x-0 fixed md:static top-16 left-0 bottom-0 w-64 ${
           darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
-        } h-[calc(100vh-64px)] pt-6 overflow-y-auto transition-all duration-300 ease-in-out z-40 shadow-lg`}
+        } h-[calc(100vh-4rem)] md:h-auto overflow-y-auto overscroll-contain touch-pan-y pt-6 pb-20 transition-all duration-300 ease-in-out z-50 shadow-lg`}
       >
         <div className="px-6 mb-8 flex justify-between items-center">
           <div>
@@ -462,7 +462,7 @@ export default function DashboardLayout() {
       </div>
       
       {/* Main Content */}
-      <div className={`flex-1 overflow-y-auto p-4 md:p-6 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+      <div className={`flex-1 overflow-auto p-4 md:p-6 pb-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'} min-h-[calc(100vh-4rem)]`}>
         <Outlet />
       </div>
     </div>

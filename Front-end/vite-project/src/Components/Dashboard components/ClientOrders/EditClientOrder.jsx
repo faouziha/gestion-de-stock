@@ -93,13 +93,22 @@ const EditClientOrder = () => {
         // Format order items
         let formattedItems = [];
         if (orderData.orderItems && orderData.orderItems.length > 0) {
-          formattedItems = orderData.orderItems.map(item => ({
-            id: item.id, // Keep track of existing item IDs
-            product_id: item.product_id ? String(item.product_id) : '',
-            quantity: item.quantity || 1,
-            price: parseFloat(item.price) || 0,
-            total: parseFloat(item.total_amount) || 0
-          }));
+          console.log('Order items from API:', orderData.orderItems);
+          formattedItems = orderData.orderItems.map(item => {
+            // Try to get price from various possible fields
+            const price = parseFloat(item.unit_price) || parseFloat(item.price) || 0;
+            // Get the correct total field
+            const total = parseFloat(item.total_price) || parseFloat(item.total) || (price * (item.quantity || 1));
+            
+            return {
+              id: item.id, // Keep track of existing item IDs
+              product_id: item.product_id ? String(item.product_id) : '',
+              quantity: item.quantity || 1,
+              price: price,
+              total: total
+            };
+          });
+          console.log('Formatted items for form:', formattedItems);
         }
         
         // If no items are found, create a default empty one
@@ -175,12 +184,22 @@ const EditClientOrder = () => {
     if (name === 'product_id') {
       const selectedProduct = products.find(product => product.id === parseInt(value));
       if (selectedProduct) {
+        // Make sure we have a valid price
+        const price = parseFloat(selectedProduct.prix) || 0;
+        // Keep the original item ID if it exists
+        const originalItemId = newOrderItems[index].id;
+        
+        console.log('Selected product price:', price);
+        
         newOrderItems[index] = {
-          ...newOrderItems[index],
+          ...(originalItemId ? { id: originalItemId } : {}), // Keep ID for existing items
           product_id: value,
-          price: selectedProduct.prix, // Set price from selected product
-          total: selectedProduct.prix * newOrderItems[index].quantity
+          quantity: newOrderItems[index].quantity || 1,
+          price: price, // Set price from selected product
+          total: price * (newOrderItems[index].quantity || 1)
         };
+        
+        console.log('Updated order item:', newOrderItems[index]);
       }
     } else if (name === 'quantity') {
       const quantity = parseInt(value) || 0;
@@ -299,21 +318,21 @@ const EditClientOrder = () => {
     setSubmitting(true);
     
     try {
-      // Format the payload for update - simplified to match our backend
+      // Format the payload for update
       const payload = {
-        customer_name: orderData.client_id,
+        client_id: orderData.client_id,
         date: orderData.date,
         status: orderData.status,
         userId: orderData.userId,
-        // Important: Include these fields to ensure they're saved properly
         payment_method: orderData.payment_method,
         reference: orderData.reference,
         notes: orderData.notes,
-        // Only send the first item from orderItems as our DB schema doesn't support multiple products per order
+        // Send all valid order items
         orderItems: orderItems.filter(item => item.product_id && item.quantity > 0).map(item => ({
+          id: item.id, // Include the item ID if it exists (for updates)
           product_id: parseInt(item.product_id),
           quantity: parseInt(item.quantity),
-          price: parseFloat(item.price),
+          price: parseFloat(item.price) || 0,
           total: parseFloat(item.price) * parseInt(item.quantity)
         }))
       };

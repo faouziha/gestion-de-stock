@@ -28,9 +28,10 @@ const DisplayClientOrders = () => {
     'Cancelled': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
   };
 
+  // Fetch orders when component mounts or sort criteria change
   useEffect(() => {
     fetchOrders();
-  }, [user, sortField, sortDirection, searchTerm]);
+  }, [user, sortField, sortDirection]);
 
   const fetchOrders = async () => {
     try {
@@ -79,6 +80,8 @@ const DisplayClientOrders = () => {
 
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => {
+    if (!searchTerm) return true;
+    
     const searchTermLower = searchTerm.toLowerCase();
     return (
       (order.client_name && order.client_name.toLowerCase().includes(searchTermLower)) ||
@@ -213,9 +216,43 @@ const DisplayClientOrders = () => {
                     
                     <div>
                       <span className={`block text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Amount</span>
-                      <span className="font-medium">${parseFloat(order.total_amount).toFixed(2)}</span>
+                      <span className="font-medium">
+                        ${(() => {
+                          // Calculate subtotal
+                          const subtotal = order.orderItems ? order.orderItems.reduce((sum, item) => {
+                            const price = parseFloat(item.price) || 0;
+                            const quantity = parseInt(item.quantity) || 0;
+                            return sum + (price * quantity);
+                          }, 0) : parseFloat(order.total_amount) || 0;
+                          
+                          // Add 10% tax to match the add/edit pages
+                          const tax = subtotal * 0.1;
+                          const total = subtotal + tax;
+                          
+                          return total.toFixed(2);
+                        })()}
+                      </span>
                     </div>
                   </div>
+                  
+                  {/* Product List */}
+                  {order.orderItems && order.orderItems.length > 0 && (
+                    <div>
+                      <span className={`block text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1`}>Products</span>
+                      <div className={`text-xs p-2 rounded ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        <div className="space-y-2">
+                          {order.orderItems.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center">
+                              <span className="truncate flex-1">{item.product_name}</span>
+                              <span className="flex-shrink-0 ml-2">
+                                {item.quantity} × ${parseFloat(item.price).toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
