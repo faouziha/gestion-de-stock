@@ -2990,10 +2990,21 @@ app.delete("/facture/:id", async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+// Add a root endpoint for health check
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Stock Management API is running',
+        version: '1.0.0',
+        status: 'online'
+    });
 });
 
-// For Vercel serverless functions
+// For traditional Node.js environments
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+}
+
+// Export for Vercel serverless functions
 module.exports = app;
