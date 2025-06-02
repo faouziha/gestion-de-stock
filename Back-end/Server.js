@@ -16,7 +16,7 @@ const pool = new pg.Pool({
     database: process.env.DATABASE_NAME,
     password: process.env.USER_PASSWORD,
     port: process.env.DATABASE_PORT,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false }, // Always use SSL with rejectUnauthorized false for Vercel
     connectionTimeoutMillis: 5000, // timeout after 5 seconds
     max: 20 // set pool max size to 20
 });
