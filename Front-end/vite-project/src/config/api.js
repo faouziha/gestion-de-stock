@@ -3,7 +3,7 @@
 // switches between development and production URLs
 
 const API_BASE_URL = import.meta.env.PROD 
-  ? '/api' // Production URL - relative path for any hosting platform
+  ? 'https://back-4qboqa6cp-faouzihas-projects.vercel.app' // Production URL - deployed backend
   : 'http://localhost:3000';                     // Development URL
 
 // Export the base URL and specific endpoint URLs
