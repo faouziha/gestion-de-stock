@@ -41,8 +41,17 @@ const db = {
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Configure CORS with specific options
+const corsOptions = {
+    origin: ['https://gestion-de-stock-kohl.vercel.app', 'https://gestion-de-stock-inky.vercel.app', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400 // 24 hours
+};
+
 app.use(express.json({ limit: '10mb' })); // Increase payload limit for Base64 images
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Register the multi-client-order router
 app.use('/multi-client-order', multiClientOrdersRouter);
