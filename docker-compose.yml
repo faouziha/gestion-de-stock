@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./Back-end
+    container_name: stock-management-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - USER_NAME=postgres
+      - USER_PASSWORD=lAKhkHdxsLtQhLzATotKuffwMozZaUPe
+      - DATABASE_NAME=railway
+      - DATABASE_HOST=switchback.proxy.rlwy.net
+      - DATABASE_PORT=54951
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - ./Back-end/uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./Front-end/vite-project
+    container_name: stock-management-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
