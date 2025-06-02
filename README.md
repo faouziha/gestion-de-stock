@@ -2,6 +2,14 @@
 
 A comprehensive inventory and order management system built with modern web technologies. This application helps businesses manage their inventory, track orders, handle suppliers and clients, generate invoices, and monitor stock levels in real-time.
 
+## Latest Updates (May 2025)
+
+- **Enhanced Multi-Product Orders**: Completely redesigned order system to display multiple products in a single order card for better organization and readability
+- **Improved Order Management**: Added tax calculation (10%) for all orders with consistent display across all views
+- **Responsive UI Enhancements**: All screens now fully responsive on mobile, tablet, and desktop devices
+- **User-Specific Data**: Improved data isolation to ensure users only see suppliers and orders they created
+- **Fixed Navigation**: Enhanced sidebar navigation with improved scrolling on mobile devices
+
 ![Inventory Management System](https://via.placeholder.com/800x400?text=Gestion+de+Stock)
 
 ## Overview
@@ -83,10 +91,13 @@ This application is designed to streamline inventory management processes for sm
   - Color-coded status indicators
   - Total calculations and payment information
   - Print-friendly formatting for professional documentation
-- **Multi-Product Orders**: Support for orders containing multiple products
-  - Parent-child order relationship structure
+- **Multi-Product Orders**: Enhanced support for orders containing multiple products
+  - Parent-child order relationship structure for database organization
+  - Consolidated display of multiple products in a single order card
   - Ability to add, edit, and remove products within an order
-  - Automatic total calculations based on products and quantities
+  - Automatic total calculations with subtotal, tax (10%), and final amount
+  - Stock validation for each product to prevent over-ordering
+  - Detailed order view with product-specific information
 - **Powerful Search Functionality**: Find orders quickly by:
   - Product name
   - Customer name

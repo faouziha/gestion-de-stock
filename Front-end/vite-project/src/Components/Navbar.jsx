@@ -48,7 +48,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className={`fixed top-0 left-0 right-0 z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} shadow-sm transition-colors duration-200`}>
+      <div className={`fixed top-0 left-0 right-0 z-[60] ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} shadow-sm transition-colors duration-200`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <Link to={'/'} className={`text-2xl font-bold ${darkMode ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors`}>

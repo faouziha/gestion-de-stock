@@ -346,13 +346,13 @@ const ViewClientOrder = () => {
             onClick={handlePrint}
             className="flex-1 sm:flex-grow-0 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded flex items-center justify-center hover:bg-blue-600 text-sm sm:text-base transition-colors"
           >
-            <FaPrint className="mr-1 sm:mr-2" /> <span className="hidden xs:inline">Print</span>
+            <FaPrint className="mr-1 sm:mr-2" /> <span>Print</span>
           </button>
           <button 
             onClick={() => navigate(`/clientorders/edit/${id}`)}
             className="flex-1 sm:flex-grow-0 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded flex items-center justify-center hover:bg-blue-700 text-sm sm:text-base transition-colors"
           >
-            <FaEdit className="mr-1 sm:mr-2" /> <span className="hidden xs:inline">Edit</span>
+            <FaEdit className="mr-1 sm:mr-2" /> <span>Edit</span>
           </button>
         </div>
       </div>
