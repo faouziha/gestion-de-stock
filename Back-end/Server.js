@@ -10,16 +10,24 @@ const categoriesRouter = require("./categories_api");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
-const pool = new pg.Pool({
+const isLocalhost = process.env.DATABASE_HOST === 'localhost' || process.env.DATABASE_HOST === '127.0.0.1';
+
+const poolConfig = {
     user: process.env.USER_NAME,
     host: process.env.DATABASE_HOST,
     database: process.env.DATABASE_NAME,
     password: process.env.USER_PASSWORD,
     port: process.env.DATABASE_PORT,
-    ssl: { rejectUnauthorized: false }, // Always use SSL with rejectUnauthorized false for Vercel
     connectionTimeoutMillis: 5000, // timeout after 5 seconds
     max: 20 // set pool max size to 20
-});
+};
+
+// Only add SSL config for non-localhost connections (like Vercel deployments)
+if (!isLocalhost) {
+    poolConfig.ssl = { rejectUnauthorized: false };
+}
+
+const pool = new pg.Pool(poolConfig);
 
 // Test database connection
 pool.connect((err, client, release) => {
@@ -52,6 +60,18 @@ const corsOptions = {
 
 app.use(express.json({ limit: '10mb' })); // Increase payload limit for Base64 images
 app.use(cors(corsOptions));
+
+// Add explicit OPTIONS handler for preflight requests
+app.options('*', cors(corsOptions));
+
+// Add middleware to ensure CORS headers are present on all responses
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+});
 
 // Register the multi-client-order router
 app.use('/multi-client-order', multiClientOrdersRouter);
