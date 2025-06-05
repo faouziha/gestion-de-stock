@@ -518,7 +518,7 @@ app.get("/produit", async (req, res) => {
             SELECT p.*, c.name as category_name, c.color as category_color, c.icon as category_icon
             FROM produit p
             LEFT JOIN categories c ON p.category_id = c.id
-            ${userId ? 'WHERE p.user_id = $1' : ''}
+            ${userId ? 'WHERE p.userid = $1' : ''}
         `;
         
         const params = userId ? [userId] : [];
@@ -565,12 +565,15 @@ app.post("/produit", async (req, res) => {
         
         // Log the request body structure (without full image data for brevity)
         const requestBodyLog = { ...req.body };
-        if (requestBodyLog.image) {
-            requestBodyLog.image = `${requestBodyLog.image.substring(0, 30)}... (truncated)`;
+        if (requestBodyLog.image_url) {
+            requestBodyLog.image_url = `${requestBodyLog.image_url.substring(0, 30)}... (truncated)`;
         }
         console.log("Request body structure:", requestBodyLog);
         
+        // Extract data from request body
         const {nom, description, image, total, serial_num, fournisseur_id, prix, category_id, user_id} = req.body;
+        // In the new schema, column names match the frontend names directly
+        const userid = user_id; // Map user_id to userid for database consistency
         
         // Validate required fields
         if (!nom) {
@@ -584,10 +587,10 @@ app.post("/produit", async (req, res) => {
             image: image ? 'Image data present' : 'No image data',
             total, 
             serial_num: serial_num || 'null',
-            fournisseur_id, 
+            fournisseur_id,
             prix,
             category_id: category_id || 'null',
-            user_id
+            userid
         });
         
         // Parse numeric values to ensure correct data types
@@ -595,8 +598,8 @@ app.post("/produit", async (req, res) => {
         const parsedTotal = total ? parseInt(total) : null;
         
         const newProduct = await db.query(
-            "INSERT INTO produit (nom, description, image, total, serial_num, fournisseur_id, prix, category_id, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-            [nom, description, image, parsedTotal, serial_num, fournisseur_id, parsedPrice, category_id || null, user_id]
+            "INSERT INTO produit (nom, description, image, total, serial_num, fournisseur_id, prix, category_id, userid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+            [nom, description, image, parsedTotal, serial_num, fournisseur_id, parsedPrice, category_id || null, userid]
         );
         
         console.log("Product created successfully with ID:", newProduct.rows[0].id);
@@ -624,13 +627,15 @@ app.put("/produit/:id", async (req, res) => {
         
         // Log the request body structure (without full image data for brevity)
         const requestBodyLog = { ...req.body };
-        if (requestBodyLog.image) {
-            requestBodyLog.image = `${requestBodyLog.image.substring(0, 30)}... (truncated)`;
+        if (requestBodyLog.image_url) {
+            requestBodyLog.image_url = `${requestBodyLog.image_url.substring(0, 30)}... (truncated)`;
         }
         console.log("Request body structure:", requestBodyLog);
         
         const {id} = req.params;
         const {nom, description, image, total, serial_num, fournisseur_id, prix, user_id} = req.body;
+        // In the new schema, column names match the frontend names directly
+        const userid = user_id; // Map user_id to userid for database consistency
         
         // Validate required fields
         if (!nom) {
@@ -645,8 +650,8 @@ app.put("/produit/:id", async (req, res) => {
         }
         
         // Check if the user has permission to update this product
-        if (user_id && productCheck.rows[0].user_id !== user_id) {
-            console.log("Permission denied. Product user_id:", productCheck.rows[0].user_id, "Request user_id:", user_id);
+        if (userid && productCheck.rows[0].userid !== userid) {
+            console.log("Permission denied. Product userid:", productCheck.rows[0].userid, "Request userid:", userid);
             return res.status(403).json({ error: "You don't have permission to update this product" });
         }
         
@@ -658,15 +663,19 @@ app.put("/produit/:id", async (req, res) => {
             image: image ? 'Image data present' : 'No image data',
             total, 
             serial_num: serial_num || 'null',
-            fournisseur_id, 
+            fournisseur_id,
             prix,
             category_id: req.body.category_id || 'null',
-            user_id: user_id || productCheck.rows[0].user_id
+            userid: userid || productCheck.rows[0].userid
         });
         
+        // Parse numeric values to ensure correct data types
+        const parsedPrice = prix ? parseFloat(prix) : null;
+        const parsedTotal = total ? parseInt(total) : null;
+        
         const updatedProduct = await db.query(
-            "UPDATE produit SET nom = $2, description = $3, image = $4, total = $5, serial_num = $6, fournisseur_id = $7, prix = $8, category_id = $9, user_id = $10 WHERE id = $1 RETURNING *",
-            [id, nom, description, image, total, serial_num, fournisseur_id, prix, req.body.category_id || null, user_id || productCheck.rows[0].user_id]
+            "UPDATE produit SET nom = $2, description = $3, image = $4, total = $5, serial_num = $6, fournisseur_id = $7, prix = $8, category_id = $9, userid = $10 WHERE id = $1 RETURNING *",
+            [id, nom, description, image, parsedTotal, serial_num, fournisseur_id, parsedPrice, req.body.category_id || null, userid || productCheck.rows[0].userid]
         );
         
         console.log("Product updated successfully with ID:", updatedProduct.rows[0].id);
@@ -1518,7 +1527,7 @@ app.get("/fournisseur", (req, res) => {
         
         // Filter by userId if provided
         if (userId) {
-            query = "SELECT * FROM fournisseur WHERE userId = $1";
+            query = "SELECT * FROM fournisseur WHERE userid = $1";
             params = [userId];
         }
         
@@ -1547,7 +1556,7 @@ app.get("/fournisseur/:id", async (req, res) => {
         
         // If userId is provided, ensure the supplier belongs to that user
         if (userId) {
-            query = "SELECT * FROM fournisseur WHERE id = $1 AND userId = $2";
+            query = "SELECT * FROM fournisseur WHERE id = $1 AND userid = $2";
             params = [id, userId];
         }
         
@@ -1586,7 +1595,7 @@ app.post("/fournisseur", async (req, res) => {
         
         // Add userId if it exists
         if (userId) {
-            query += ", userId";
+            query += ", userid";
             placeholders += ", $" + valueIndex;
             values.push(userId);
         }
@@ -1629,7 +1638,7 @@ app.put("/fournisseur/:id", async (req, res) => {
         }
         
         // If userId is provided, ensure the supplier belongs to that user
-        if (userId && checkSupplier.rows[0].userId !== userId) {
+        if (userId && checkSupplier.rows[0].userid !== userId) {
             return res.status(403).json({ error: "You don't have permission to update this supplier" });
         }
         
@@ -1644,7 +1653,7 @@ app.put("/fournisseur/:id", async (req, res) => {
         
         // Ensure userId is preserved
         if (userId) {
-            query += `, userId = $${paramIndex}`;
+            query += `, user_id = $${paramIndex}`;
             values.push(userId);
             paramIndex++;
         }
@@ -1690,7 +1699,7 @@ app.delete("/fournisseur/:id", async (req, res) => {
                 return res.status(404).json({ error: "Supplier not found" });
             }
             
-            if (checkSupplier.rows[0].userId !== userId) {
+            if (checkSupplier.rows[0].user_id !== userId) {
                 return res.status(403).json({ error: "You don't have permission to delete this supplier" });
             }
         }
@@ -2430,11 +2439,11 @@ app.get("/stats/entity-counts", async (req, res) => {
         const userId = req.query.userId;
         
         // First: Query to get all clients (regardless of date_inscription)
-        let clientQuery = `SELECT * FROM clients WHERE userId = $1`;
+        let clientQuery = `SELECT * FROM clients WHERE userid = $1`;
         let clientResult = await db.query(clientQuery, [userId]);
         
         // Second: Query to get all suppliers
-        let supplierQuery = `SELECT * FROM fournisseur WHERE userId = $1`;
+        let supplierQuery = `SELECT * FROM fournisseur WHERE userid = $1`;
         let supplierResult = await db.query(supplierQuery, [userId]);
         
         // Process the data to create a month-by-month structure
