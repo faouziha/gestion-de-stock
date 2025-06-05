@@ -7,6 +7,8 @@ const clientOrdersRouter = require("./clientorders_routes");
 const { router: orderDetailsRouter } = require("./order_details_routes");
 const categoriesSetupRouter = require("./categories_setup");
 const categoriesRouter = require("./categories_api");
+const brandsSetupRouter = require("./brands_setup");
+const brandsRouter = require("./brands_api");
 const clientSoldeRouter = require("./client_solde_routes");
 require('dotenv').config();
 
@@ -59,6 +61,12 @@ app.use(categoriesSetupRouter);
 
 // Register the categories API router
 app.use('/categories', categoriesRouter);
+
+// Register the brands setup router
+app.use(brandsSetupRouter);
+
+// Register the brands API router
+app.use('/brands', brandsRouter);
 
 // Register the client solde router
 app.use(clientSoldeRouter);
@@ -637,7 +645,7 @@ app.put("/produit/:id", async (req, res) => {
         console.log("Request body structure:", requestBodyLog);
         
         const {id} = req.params;
-        const {nom, description, image, total, serial_num, fournisseur_id, prix, user_id} = req.body;
+        const {nom, description, image, total, serial_num, fournisseur_id, prix, user_id, brand_id} = req.body;
         // In the new schema, column names match the frontend names directly
         const userid = user_id; // Map user_id to userid for database consistency
         
@@ -670,6 +678,7 @@ app.put("/produit/:id", async (req, res) => {
             fournisseur_id,
             prix,
             category_id: req.body.category_id || 'null',
+            brand_id: brand_id || 'null',
             userid: userid || productCheck.rows[0].userid
         });
         
@@ -678,8 +687,8 @@ app.put("/produit/:id", async (req, res) => {
         const parsedTotal = total ? parseInt(total) : null;
         
         const updatedProduct = await db.query(
-            "UPDATE produit SET nom = $2, description = $3, image = $4, total = $5, serial_num = $6, fournisseur_id = $7, prix = $8, category_id = $9, userid = $10 WHERE id = $1 RETURNING *",
-            [id, nom, description, image, parsedTotal, serial_num, fournisseur_id, parsedPrice, req.body.category_id || null, userid || productCheck.rows[0].userid]
+            "UPDATE produit SET nom = $2, description = $3, image = $4, total = $5, serial_num = $6, fournisseur_id = $7, prix = $8, category_id = $9, userid = $10, brand_id = $11 WHERE id = $1 RETURNING *",
+            [id, nom, description, image, parsedTotal, serial_num, fournisseur_id, parsedPrice, req.body.category_id || null, userid || productCheck.rows[0].userid, brand_id || null]
         );
         
         console.log("Product updated successfully with ID:", updatedProduct.rows[0].id);

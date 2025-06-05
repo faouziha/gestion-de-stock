@@ -8,6 +8,7 @@ import { useTheme } from '../../../context/ThemeContext'
 export default function DisplayProduct() {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +16,7 @@ export default function DisplayProduct() {
     const [filterType, setFilterType] = useState(null);
     const [activeFilters, setActiveFilters] = useState({
         category: null,
+        brand: null,
         price: null,
         stock: null
     });
@@ -40,6 +42,10 @@ export default function DisplayProduct() {
                 // Fetch categories
                 const categoriesResponse = await axios.get(`http://localhost:3000/categories?userId=${user.id}`);
                 setCategories(categoriesResponse.data);
+                
+                // Fetch brands
+                const brandsResponse = await axios.get(`http://localhost:3000/brands`);
+                setBrands(brandsResponse.data);
                 
                 setError(null);
             } catch (error) {
@@ -121,6 +127,51 @@ export default function DisplayProduct() {
                                     darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
                                 } right-0`}>
                                     <div className="py-1">
+                                        {/* Filter by Brand */}
+                                        <div 
+                                            className={`px-4 py-2 text-sm ${
+                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                            } cursor-pointer flex justify-between items-center group`}
+                                            onMouseEnter={() => setFilterType('brand')}
+                                        >
+                                            <span>Filter by Brand</span>
+                                            <FaChevronDown className="text-xs" />
+                                            
+                                            {filterType === 'brand' && (
+                                                <div className={`absolute left-full top-0 ml-0.5 w-48 rounded-md shadow-lg ${
+                                                    darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                                                }`}>
+                                                    <div className="py-1">
+                                                        <div 
+                                                            className={`px-4 py-2 text-sm ${
+                                                                darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                            } cursor-pointer ${activeFilters.brand === null ? 'font-bold' : ''}`}
+                                                            onClick={() => {
+                                                                setActiveFilters({...activeFilters, brand: null});
+                                                                setShowFilterMenu(false);
+                                                            }}
+                                                        >
+                                                            All Brands
+                                                        </div>
+                                                        {brands.map(brand => (
+                                                            <div 
+                                                                key={brand.id}
+                                                                className={`px-4 py-2 text-sm ${
+                                                                    darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
+                                                                } cursor-pointer ${activeFilters.brand === brand.id ? 'font-bold' : ''}`}
+                                                                onClick={() => {
+                                                                    setActiveFilters({...activeFilters, brand: brand.id});
+                                                                    setShowFilterMenu(false);
+                                                                }}
+                                                            >
+                                                                {brand.name}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         {/* Filter by Category */}
                                         <div 
                                             className={`px-4 py-2 text-sm ${
@@ -298,6 +349,7 @@ export default function DisplayProduct() {
                                                 onClick={() => {
                                                     setActiveFilters({
                                                         category: null,
+                                                        brand: null,
                                                         price: null,
                                                         stock: null
                                                     });
@@ -361,6 +413,8 @@ export default function DisplayProduct() {
                         // Category filter
                         const matchesCategory = activeFilters.category === null || 
                             (product.category_id && product.category_id.toString() === activeFilters.category.toString());
+                        const matchesBrand = activeFilters.brand === null || 
+                            (product.brand_id && product.brand_id.toString() === activeFilters.brand.toString());
                         
                         // Stock filter
                         let matchesStock = true;
@@ -372,7 +426,7 @@ export default function DisplayProduct() {
                             matchesStock = parseInt(product.total) === 0;
                         }
                         
-                        return matchesSearch && matchesCategory && matchesStock;
+                        return matchesSearch && matchesCategory && matchesBrand && matchesStock;
                     });
                     
                     // Apply price sorting
@@ -421,6 +475,8 @@ export default function DisplayProduct() {
                         // Category filter
                         const matchesCategory = activeFilters.category === null || 
                             (product.category_id && product.category_id.toString() === activeFilters.category.toString());
+                        const matchesBrand = activeFilters.brand === null || 
+                            (product.brand_id && product.brand_id.toString() === activeFilters.brand.toString());
                         
                         // Stock filter
                         let matchesStock = true;
@@ -432,7 +488,7 @@ export default function DisplayProduct() {
                             matchesStock = parseInt(product.total) === 0;
                         }
                         
-                        return matchesSearch && matchesCategory && matchesStock;
+                        return matchesSearch && matchesCategory && matchesBrand && matchesStock;
                     });
                     
                     // Apply price sorting

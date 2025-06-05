@@ -46,6 +46,10 @@ import ViewCategory from './Components/Dashboard components/Categories/ViewCateg
 import DisplayClientSoldes from './Components/Dashboard components/ClientSolde/DisplayClientSoldes'
 import ViewClientSolde from './Components/Dashboard components/ClientSolde/ViewClientSolde'
 import AddClientTransaction from './Components/Dashboard components/ClientSolde/AddClientTransaction'
+import DisplayBrands from './Components/Dashboard components/Brands/DisplayBrands'
+import AddBrand from './Components/Dashboard components/Brands/AddBrand'
+import ViewBrand from './Components/Dashboard components/Brands/ViewBrand'
+import EditBrand from './Components/Dashboard components/Brands/EditBrand'
 
 
 function App() {
@@ -115,6 +119,12 @@ function App() {
                 <Route path="/clients/soldes" element={<DisplayClientSoldes />} />
                 <Route path="/clients/solde/:clientId" element={<ViewClientSolde />} />
                 <Route path="/clients/solde/:clientId/add" element={<AddClientTransaction />} />
+                
+                {/* Brands Routes */}
+                <Route path="/brands" element={<DisplayBrands />} />
+                <Route path="/brands/add" element={<AddBrand />} />
+                <Route path="/brands/view/:id" element={<ViewBrand />} />
+                <Route path="/brands/edit/:id" element={<EditBrand />} />
                 {/* Add more dashboard routes here */}
               </Route>
             </Routes>

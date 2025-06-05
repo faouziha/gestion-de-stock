@@ -13,6 +13,7 @@ export default function ViewProduct() {
     
     const [product, setProduct] = useState(null);
     const [supplier, setSupplier] = useState(null);
+    const [brand, setBrand] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -27,6 +28,15 @@ export default function ViewProduct() {
                 if (response.data.fournisseur_id) {
                     const supplierResponse = await axios.get(`http://localhost:3000/fournisseur/${response.data.fournisseur_id}`);
                     setSupplier(supplierResponse.data);
+                }
+                
+                // Fetch brand details if brand ID exists
+                if (response.data.brand_id) {
+                    const brandsResponse = await axios.get(`http://localhost:3000/brands`);
+                    const brandData = brandsResponse.data.find(b => b.id === response.data.brand_id);
+                    if (brandData) {
+                        setBrand(brandData);
+                    }
                 }
                 
                 setError(null);
@@ -177,6 +187,35 @@ export default function ViewProduct() {
                                 
                                 {/* Right Column */}
                                 <div>
+                                    {/* Brand Information */}
+                                    {brand && (
+                                        <div className={`p-4 rounded-lg mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                            <h3 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Brand</h3>
+                                            <div className="flex items-center">
+                                                {brand.logo && (
+                                                    <div className="w-12 h-12 mr-3 rounded overflow-hidden bg-white flex-shrink-0">
+                                                        <img 
+                                                            src={brand.logo} 
+                                                            alt={brand.name} 
+                                                            className="w-full h-full object-contain"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = 'https://via.placeholder.com/100x100.png?text=No+Logo';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{brand.name}</p>
+                                                    {brand.description && (
+                                                        <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{brand.description}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Supplier Information */}
                                     {supplier && (
                                         <div className={`p-4 rounded-lg mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                                             <h3 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Supplier Information</h3>

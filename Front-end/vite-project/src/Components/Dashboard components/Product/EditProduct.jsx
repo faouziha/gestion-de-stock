@@ -20,6 +20,7 @@ export default function EditProduct() {
         fournisseur_id: '',
         prix: '',
         category_id: '',
+        brand_id: '',
         user_id: user.id
     });
     const [photoPreview, setPhotoPreview] = useState(null);
@@ -28,8 +29,10 @@ export default function EditProduct() {
     const [error, setError] = useState(null);
     const [suppliers, setSuppliers] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
     const [loadingSuppliers, setLoadingSuppliers] = useState(false);
     const [loadingCategories, setLoadingCategories] = useState(false);
+    const [loadingBrands, setLoadingBrands] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -53,6 +56,7 @@ export default function EditProduct() {
                     fournisseur_id: product.fournisseur_id || '',
                     prix: product.prix || '',
                     category_id: product.category_id || '',
+                    brand_id: product.brand_id || '',
                     user_id: product.user_id || user.id
                 });
                 
@@ -73,12 +77,13 @@ export default function EditProduct() {
         fetchProduct();
     }, [id, user.id, user.role]);
 
-    // Fetch suppliers when component mounts
+    // Fetch suppliers, categories, and brands when component mounts
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoadingSuppliers(true);
                 setLoadingCategories(true);
+                setLoadingBrands(true);
                 
                 // Fetch suppliers
                 const suppliersResponse = await axios.get(`http://localhost:3000/fournisseur?userId=${user.id}`);
@@ -87,12 +92,17 @@ export default function EditProduct() {
                 // Fetch categories
                 const categoriesResponse = await axios.get(`http://localhost:3000/categories?userId=${user.id}`);
                 setCategories(categoriesResponse.data);
+                
+                // Fetch brands
+                const brandsResponse = await axios.get(`http://localhost:3000/brands`);
+                setBrands(brandsResponse.data);
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setError("Failed to load required data. Please try again later.");
             } finally {
                 setLoadingSuppliers(false);
                 setLoadingCategories(false);
+                setLoadingBrands(false);
             }
         };
 
@@ -251,47 +261,93 @@ export default function EditProduct() {
                                 <p className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Provide a detailed description of your product</p>
                             </div>
                             
-                            <div className="mb-4">
-                                <label htmlFor="category_id" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                                    Category
-                                </label>
-                                <div className="relative">
-                                    {loadingCategories ? (
-                                        <div className={`flex items-center px-3 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-500'} rounded-md transition-colors`}>
-                                            <FaSpinner className="animate-spin mr-2" />
-                                            <span>Loading categories...</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label htmlFor="category_id" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                                        Category
+                                    </label>
+                                    <div className="relative">
+                                        {loadingCategories ? (
+                                            <div className={`flex items-center px-3 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-500'} rounded-md transition-colors`}>
+                                                <FaSpinner className="animate-spin mr-2" />
+                                                <span>Loading categories...</span>
+                                            </div>
+                                        ) : (
+                                            <select
+                                                id="category_id"
+                                                name="category_id"
+                                                value={formData.category_id}
+                                                onChange={handleChange}
+                                                className={`w-full px-3 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'} rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm appearance-none transition-colors`}
+                                            >
+                                                <option value="">-- Select Category (Optional) --</option>
+                                                {categories.map(category => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                            <svg className={`fill-current h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-700'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                            </svg>
                                         </div>
-                                    ) : (
-                                        <select
-                                            id="category_id"
-                                            name="category_id"
-                                            value={formData.category_id}
-                                            onChange={handleChange}
-                                            className={`w-full px-3 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'} rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm appearance-none transition-colors`}
+                                    </div>
+                                    <div className="mt-2 flex justify-between items-center">
+                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select product category</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/categories/add')}
+                                            className="text-xs text-blue-600 hover:text-blue-800"
                                         >
-                                            <option value="">-- Select Category (Optional) --</option>
-                                            {categories.map(category => (
-                                                <option key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    )}
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                        <svg className={`fill-current h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-700'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                                        </svg>
+                                            + Add New
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="mt-2 flex justify-between items-center">
-                                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Organize your product inventory with categories</p>
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate('/categories/add')}
-                                        className="text-xs text-blue-600 hover:text-blue-800"
-                                    >
-                                        + Add New Category
-                                    </button>
+                                
+                                <div>
+                                    <label htmlFor="brand_id" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                                        Brand
+                                    </label>
+                                    <div className="relative">
+                                        {loadingBrands ? (
+                                            <div className={`flex items-center px-3 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-500'} rounded-md transition-colors`}>
+                                                <FaSpinner className="animate-spin mr-2" />
+                                                <span>Loading brands...</span>
+                                            </div>
+                                        ) : (
+                                            <select
+                                                id="brand_id"
+                                                name="brand_id"
+                                                value={formData.brand_id}
+                                                onChange={handleChange}
+                                                className={`w-full px-3 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-700'} rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm appearance-none transition-colors`}
+                                            >
+                                                <option value="">-- Select Brand (Optional) --</option>
+                                                {brands.map(brand => (
+                                                    <option key={brand.id} value={brand.id}>
+                                                        {brand.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                            <svg className={`fill-current h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-700'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 flex justify-between items-center">
+                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select product brand</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/brands/add')}
+                                            className="text-xs text-blue-600 hover:text-blue-800"
+                                        >
+                                            + Add New
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
