@@ -92,6 +92,11 @@ const CreateClientOrder = () => {
   const handleOrderChange = async (e) => {
     const { name, value } = e.target;
     
+    // Debug payment method changes
+    if (name === 'payment_method') {
+      console.log('Setting payment method to:', value);
+    }
+    
     // Update the form data
     setOrderData({
       ...orderData,
@@ -268,6 +273,7 @@ const CreateClientOrder = () => {
       total_amount: parseFloat(totalAmount).toFixed(2),
       userId: orderData.userId,
       orderItems: orderItems.filter(item => item.product_id).map(item => ({
+
         product_id: parseInt(item.product_id),
         quantity: parseInt(item.quantity) || 1,
         price: parseFloat(item.price) || 0,
@@ -276,6 +282,7 @@ const CreateClientOrder = () => {
     };
     
     console.log('Sending order data:', orderPayload);
+    console.log('Payment method being sent to backend:', orderPayload.payment_method);
     
     try {
       setSubmitting(true);

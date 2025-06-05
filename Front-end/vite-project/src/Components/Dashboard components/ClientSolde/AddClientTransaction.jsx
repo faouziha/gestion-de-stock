@@ -114,10 +114,10 @@ export default function AddClientTransaction() {
         {/* Back button */}
         <button
           onClick={() => navigate(`/clients/solde/${clientId}`)}
-          className={`flex items-center mb-6 text-sm ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+          className={`flex items-center mb-6 text-sm px-3 py-2 rounded-md ${darkMode ? 'text-blue-400 hover:text-blue-300 hover:bg-gray-800' : 'text-blue-600 hover:text-blue-800 hover:bg-gray-100'}`}
         >
-          <FaArrowLeft className="mr-2" />
-          Back to Balance Details
+          <FaArrowLeft className="mr-2 flex-shrink-0" />
+          <span>Back to Balance Details</span>
         </button>
         
         <div className="mb-6">
@@ -125,7 +125,7 @@ export default function AddClientTransaction() {
             Add Transaction
           </h1>
           {client && (
-            <p className={`mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`mt-1 text-sm sm:text-base ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Client: {client.nom} {client.prenom}
             </p>
           )}
@@ -168,110 +168,112 @@ export default function AddClientTransaction() {
         )}
         
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
-          <div className={`px-6 py-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} border-b ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+          <div className={`px-4 sm:px-6 py-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} border-b ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
             <div className="flex items-center">
-              <FaMoneyBillWave className={`mr-3 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
-              <h2 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Transaction Details</h2>
+              <FaMoneyBillWave className={`mr-3 text-lg ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+              <h2 className={`font-semibold text-base sm:text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>Transaction Details</h2>
             </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                Transaction Type
-              </label>
-              <select
-                name="operation_type"
-                value={formData.operation_type}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                required
-              >
-                <option value="deposit">Deposit (Add to balance)</option>
-                <option value="withdrawal">Withdrawal (Remove from balance)</option>
-                <option value="payment">Payment for order</option>
-                <option value="refund">Refund (Return money)</option>
-              </select>
-            </div>
-            
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                Amount ($)
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                step="0.01"
-                min="0.01"
-                className={`w-full px-3 py-2 border ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                placeholder="0.00"
-                required
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                Reference (Optional)
-              </label>
-              <input
-                type="text"
-                name="reference"
-                value={formData.reference}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                placeholder="e.g., Invoice #123 or Receipt #456"
-              />
-              <p className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Order number, receipt number, or other reference
-              </p>
-            </div>
-            
-            <div className="mb-6">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                Notes (Optional)
-              </label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                className={`w-full px-3 py-2 border ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                placeholder="Additional details about this transaction..."
-              />
-            </div>
-            
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={submitting || success}
-                className={`flex items-center px-4 py-2 ${
-                  submitting || success 
-                    ? 'bg-gray-500 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                } text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaSave className="mr-2" />
-                    Save Transaction
-                  </>
-                )}
-              </button>
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                  Transaction Type
+                </label>
+                <select
+                  name="operation_type"
+                  value={formData.operation_type}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-3 sm:py-2 text-base sm:text-sm border ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  required
+                >
+                  <option value="deposit">Deposit (Add to balance)</option>
+                  <option value="withdrawal">Withdrawal (Remove from balance)</option>
+                  <option value="payment">Payment for order</option>
+                  <option value="refund">Refund (Return money)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                  Amount ($)
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0.01"
+                  className={`w-full px-3 py-3 sm:py-2 text-base sm:text-sm border ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                  Reference (Optional)
+                </label>
+                <input
+                  type="text"
+                  name="reference"
+                  value={formData.reference}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-3 sm:py-2 text-base sm:text-sm border ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  placeholder="e.g., Invoice #123 or Receipt #456"
+                />
+                <p className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Order number, receipt number, or other reference
+                </p>
+              </div>
+              
+              <div>
+                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                  Notes (Optional)
+                </label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  rows={3}
+                  className={`w-full px-3 py-3 sm:py-2 text-base sm:text-sm border ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  placeholder="Additional details about this transaction..."
+                />
+              </div>
+              
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={submitting || success}
+                  className={`w-full sm:w-auto flex justify-center items-center px-6 py-3 sm:py-2 ${
+                    submitting || success 
+                      ? 'bg-gray-500 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full"></div>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaSave className="mr-2 flex-shrink-0" />
+                      <span>Save Transaction</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         </div>

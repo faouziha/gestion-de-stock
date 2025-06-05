@@ -198,67 +198,128 @@ export default function ViewClientSolde() {
               </div>
               
               {clientSolde.history && clientSolde.history.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
-                      <tr>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                          Date
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                          Type
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                          Amount
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                          Reference
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className={`${darkMode ? 'divide-y divide-gray-600' : 'divide-y divide-gray-200'}`}>
-                      {clientSolde.history.map((transaction) => {
-                        const typeInfo = getTransactionTypeInfo(transaction.operation_type);
-                        
-                        return (
-                          <tr key={transaction.id} className={darkMode ? 'bg-gray-800' : 'bg-white'}>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                              {formatDate(transaction.transaction_date)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeInfo.bgColor} ${typeInfo.color}`}>
-                                {typeInfo.label}
-                              </span>
-                            </td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                              ['deposit', 'refund'].includes(transaction.operation_type)
-                                ? 'text-green-500'
-                                : 'text-red-500'
-                            }`}>
-                              {['deposit', 'refund'].includes(transaction.operation_type) ? '+' : '-'}
-                              {formatCurrency(transaction.amount)}
-                            </td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                              {transaction.reference || 'N/A'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                              <button
-                                onClick={() => handleDeleteClick(transaction)}
-                                className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-100 hover:bg-red-200'}`}
-                                title="Delete Transaction"
-                              >
-                                <FaTrash className={darkMode ? 'text-red-400' : 'text-red-600'} />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  {/* Desktop view - Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+                        <tr>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                            Date
+                          </th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                            Type
+                          </th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                            Amount
+                          </th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                            Reference
+                          </th>
+                          <th scope="col" className={`px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className={`${darkMode ? 'divide-y divide-gray-600' : 'divide-y divide-gray-200'}`}>
+                        {clientSolde.history.map((transaction) => {
+                          const typeInfo = getTransactionTypeInfo(transaction.operation_type);
+                          
+                          return (
+                            <tr key={transaction.id} className={darkMode ? 'bg-gray-800' : 'bg-white'}>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {formatDate(transaction.transaction_date)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeInfo.bgColor} ${typeInfo.color}`}>
+                                  {typeInfo.label}
+                                </span>
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                                ['deposit', 'refund'].includes(transaction.operation_type)
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              }`}>
+                                {['deposit', 'refund'].includes(transaction.operation_type) ? '+' : '-'}
+                                {formatCurrency(transaction.amount)}
+                              </td>
+                              <td className={`px-6 py-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`} style={{maxWidth: '200px'}}>
+                                <div className="truncate" title={transaction.reference || 'N/A'}>
+                                  {transaction.reference || 'N/A'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <button
+                                  onClick={() => handleDeleteClick(transaction)}
+                                  className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-100 hover:bg-red-200'}`}
+                                  title="Delete Transaction"
+                                >
+                                  <FaTrash className={darkMode ? 'text-red-400' : 'text-red-600'} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile view - Cards */}
+                  <div className="md:hidden space-y-4">
+                    {clientSolde.history.map((transaction) => {
+                      const typeInfo = getTransactionTypeInfo(transaction.operation_type);
+                      return (
+                        <div key={transaction.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-sm border ${darkMode ? 'border-gray-700' : 'border-gray-200'} overflow-hidden`}>
+                          <div className="p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeInfo.bgColor} ${typeInfo.color}`}>
+                                  {typeInfo.label}
+                                </span>
+                              </div>
+                              <div className={`text-base font-medium ${
+                                ['deposit', 'refund'].includes(transaction.operation_type)
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              }`}>
+                                {['deposit', 'refund'].includes(transaction.operation_type) ? '+' : '-'}
+                                {formatCurrency(transaction.amount)}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 text-sm">
+                              <div>
+                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-medium`}>Date</p>
+                                <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  {formatDate(transaction.transaction_date)}
+                                </p>
+                              </div>
+
+                              {transaction.reference && (
+                                <div>
+                                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-medium`}>Reference</p>
+                                  <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'} break-all`}>
+                                    {transaction.reference}
+                                  </p>
+                                </div>
+                              )}
+
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <button
+                                  onClick={() => handleDeleteClick(transaction)}
+                                  className={`w-full flex justify-center items-center py-2 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-600'} rounded-md`}
+                                >
+                                  <FaTrash className="mr-2" />
+                                  Delete Transaction
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               ) : (
                 <div className="p-6 text-center">
                   <FaMoneyBillWave className={`h-12 w-12 ${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-3`} />

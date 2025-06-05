@@ -182,6 +182,10 @@ const ViewClientOrder = () => {
         });
         
         const orderData = orderResponse.data;
+        
+        // Log the payment method for debugging
+        console.log('Payment method received from API:', orderData.payment_method);
+        
         setOrder(orderData);
         console.log('Order data fetched:', orderData);
         
@@ -378,7 +382,11 @@ const ViewClientOrder = () => {
                 {order.status || 'N/A'}
               </span>
             </p>
-            <p><span className="font-medium">Payment Method:</span> {order.payment_method || 'N/A'}</p>
+            <p>
+              <span className="font-medium">Payment Method:</span> {order.payment_method || 'N/A'}
+              {/* Debug information - will only show in development */}
+              {process.env.NODE_ENV === 'development' && <span className="text-xs text-gray-500 ml-2">(Raw value: {JSON.stringify(order.payment_method)})</span>}
+            </p>
             {order.notes && (
               <div className="mt-4">
                 <p className="font-medium">Notes:</p>

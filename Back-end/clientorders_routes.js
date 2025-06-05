@@ -303,6 +303,9 @@ router.get('/clientorders/:id', async (req, res) => {
       }
     }
     
+    // Log the raw payment_method from database for debugging
+    console.log('Raw payment_method from database:', order.payment_method);
+    
     // Format the order data
     const formattedOrder = {
       id: order.id,
@@ -313,7 +316,8 @@ router.get('/clientorders/:id', async (req, res) => {
       client_address: clientData ? clientData.adresse : null,
       date: order.date_commande,
       status: order.status || 'Pending',
-      payment_method: order.payment_method || 'Cash',
+      // Only use 'Cash' as fallback if payment_method is strictly null or undefined
+      payment_method: order.payment_method === null || order.payment_method === undefined ? 'Cash' : order.payment_method,
       reference: order.reference || `ORD-${order.id}`,
       notes: order.notes || '',
       total_amount: parseFloat(order.total_amount) || 0,

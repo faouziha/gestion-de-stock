@@ -133,7 +133,7 @@ export default function DisplayClientSoldes() {
         {filteredClientSoldes.length > 0 && (
           <>
             {/* Desktop view - Table */}
-            <div className={`hidden md:block overflow-x-auto ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-md rounded-lg`}>
+            <div className={`hidden md:block w-full overflow-x-auto ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-md rounded-lg`}>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className={`${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                   <tr>
@@ -167,18 +167,22 @@ export default function DisplayClientSoldes() {
                           </div>
                         </div>
                       </td>
-                      <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <td className={`px-4 sm:px-6 py-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`} style={{maxWidth: '180px'}}>
                         <div>
                           {client.email && (
-                            <div className="flex items-center">
-                              <FaEye className="mr-2" />
-                              {client.email}
+                            <div className="flex items-center" title={client.email}>
+                              <FaEye className="mr-2 flex-shrink-0" />
+                              <div className="truncate overflow-hidden">
+                                {client.email}
+                              </div>
                             </div>
                           )}
                           {client.telephone && (
-                            <div className="flex items-center mt-1">
-                              <FaEye className="mr-2" />
-                              {client.telephone}
+                            <div className="flex items-center mt-1" title={client.telephone}>
+                              <FaEye className="mr-2 flex-shrink-0" />
+                              <div className="truncate overflow-hidden">
+                                {client.telephone}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -222,7 +226,7 @@ export default function DisplayClientSoldes() {
             {/* Mobile view - Cards */}
             <div className="md:hidden space-y-4">
               {filteredClientSoldes.map((client) => (
-                <div key={client.id} className={`${darkMode ? 'bg-gray-700' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                <div key={client.id} className={`${darkMode ? 'bg-gray-700' : 'bg-white'} rounded-lg shadow-md overflow-hidden flex flex-col`}>
                   <div className={`px-4 py-3 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} border-b ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                     <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {client.client_name || `${client.nom || ''} ${client.prenom || ''}`.trim()}
@@ -230,10 +234,10 @@ export default function DisplayClientSoldes() {
                   </div>
                   
                   <div className="p-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-medium`}>Contact</p>
-                        <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'} break-all`} title={client.email || client.telephone}>
                           {client.email || client.telephone || 'No contact info'}
                         </p>
                       </div>
@@ -259,24 +263,23 @@ export default function DisplayClientSoldes() {
                       </div>
                     </div>
                     
-                    <div className="mt-4 flex justify-between">
+                    <div className="mt-4 flex flex-col xs:flex-row gap-2 xs:gap-4 w-full">
                       <button
                         onClick={() => navigate(`/clients/solde/${client.id}`)}
-                        className={`flex items-center justify-center px-3 py-1.5 ${
+                        className={`flex-1 flex items-center justify-center px-3 py-2 ${
                           darkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-100' : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
-                        } rounded-md text-sm`}
+                        } rounded-md text-base min-w-0`}
                       >
-                        <FaEye className="mr-1.5" />
+                        <FaEye className="mr-2" />
                         Details
                       </button>
-                      
                       <button
                         onClick={() => navigate(`/clients/solde/${client.id}/add`)}
-                        className={`flex items-center justify-center px-3 py-1.5 ${
+                        className={`flex-1 flex items-center justify-center px-3 py-2 ${
                           darkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-100' : 'bg-green-100 hover:bg-green-200 text-green-700'
-                        } rounded-md text-sm`}
+                        } rounded-md text-base min-w-0`}
                       >
-                        <FaMoneyBillWave className="mr-1.5" />
+                        <FaMoneyBillWave className="mr-2" />
                         Add Transaction
                       </button>
                     </div>
