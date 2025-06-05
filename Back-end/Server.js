@@ -7,6 +7,7 @@ const clientOrdersRouter = require("./clientorders_routes");
 const { router: orderDetailsRouter } = require("./order_details_routes");
 const categoriesSetupRouter = require("./categories_setup");
 const categoriesRouter = require("./categories_api");
+const clientSoldeRouter = require("./client_solde_routes");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
@@ -58,6 +59,9 @@ app.use(categoriesSetupRouter);
 
 // Register the categories API router
 app.use('/categories', categoriesRouter);
+
+// Register the client solde router
+app.use(clientSoldeRouter);
 
 // Serve static files from the uploads directory
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -3000,6 +3004,30 @@ app.delete("/facture/:id", async (req, res) => {
 });
 
 // Start the server
+// Setup client solde tables (admin only)
+app.get("/setup/create-client-solde-tables", authenticateAdmin, async (req, res) => {
+    try {
+        // Read the SQL file content
+        const fs = require('fs');
+        const path = require('path');
+        const sqlFilePath = path.join(__dirname, 'client_solde_setup.sql');
+        
+        if (!fs.existsSync(sqlFilePath)) {
+            return res.status(404).json({ error: "SQL setup file not found" });
+        }
+        
+        const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+        
+        // Execute the SQL commands
+        await db.query(sqlContent);
+        
+        res.json({ success: true, message: "Client solde tables created successfully" });
+    } catch (error) {
+        console.error("Error creating client solde tables:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });

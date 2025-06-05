@@ -145,6 +145,29 @@ router.post('/clientorders', async (req, res) => {
       return res.status(500).json({ message: 'Error retrieving client information' });
     }
     
+    // Get client balance (only needed if payment method is Balance)
+    let clientBalance = 0;
+    let balanceExists = false;
+    
+    // Only check balance if using Balance payment method
+    if (payment_method === 'Balance') {
+      const checkBalanceQuery = `
+        SELECT total_solde 
+        FROM client_solde 
+        WHERE client_id = $1 AND userid = $2
+      `;
+      
+      const balanceResult = await client.query(checkBalanceQuery, [client_id, userId]);
+      
+      if (balanceResult.rows.length > 0) {
+        clientBalance = parseFloat(balanceResult.rows[0].total_solde) || 0;
+        balanceExists = true;
+      }
+      
+      // Note: We allow negative balances when the payment method is Balance
+      // No need to check if balance is sufficient
+    }
+    
     // Create the main order record
     const orderQuery = `
       INSERT INTO commande 
@@ -170,12 +193,63 @@ router.post('/clientorders', async (req, res) => {
     // Create order details entries
     await createOrUpdateOrderDetails(client, orderId, orderItems);
     
+    // Only update client balance if payment method is Balance
+    let new_balance = null;
+    
+    if (payment_method === 'Balance') {
+      // Update client balance
+      const updateBalanceQuery = `
+        UPDATE client_solde 
+        SET total_solde = total_solde - $1, 
+            last_updated = CURRENT_TIMESTAMP
+        WHERE client_id = $2 AND userid = $3
+        RETURNING *
+      `;
+      
+      const balanceUpdateResult = await client.query(updateBalanceQuery, [totalAmount, client_id, userId]);
+      
+      // If no balance record exists yet, create one
+      if (balanceUpdateResult.rowCount === 0) {
+        const insertResult = await client.query(
+          `INSERT INTO client_solde (client_id, total_solde, userid) VALUES ($1, $2, $3) RETURNING total_solde`,
+          [client_id, -totalAmount, userId]
+        );
+        new_balance = parseFloat(insertResult.rows[0].total_solde);
+      } else {
+        new_balance = parseFloat(balanceUpdateResult.rows[0].total_solde);
+      }
+      
+      // Add transaction record
+      await client.query(
+        `INSERT INTO client_solde_details 
+         (client_id, amount, operation_type, reference, notes, userid) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          client_id, 
+          totalAmount, 
+          'payment', 
+          `Order #${orderId}`, 
+          `Payment for order #${orderId}: ${reference || ''}`, 
+          userId
+        ]
+      );
+    }
+    
     await client.query('COMMIT');
     
-    res.status(201).json({ 
+    // Prepare response based on payment method
+    const responseData = { 
       id: orderId, 
       message: 'Order created successfully'
-    });
+    };
+    
+    // Add balance info only if Balance payment method was used
+    if (payment_method === 'Balance') {
+      responseData.balance_updated = true;
+      responseData.new_balance = new_balance;
+    }
+    
+    res.status(201).json(responseData);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error creating client order:', err);

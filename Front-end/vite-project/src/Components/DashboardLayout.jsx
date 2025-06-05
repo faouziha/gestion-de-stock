@@ -392,6 +392,18 @@ export default function DashboardLayout() {
                   <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
                   Add New Client
                 </Link>
+                <Link 
+                  to="/clients/soldes" 
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
+                    location.pathname === '/clients/soldes' 
+                      ? `${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}` 
+                      : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'}`
+                  }`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
+                >
+                  <span className={`w-2 h-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-500'} rounded-full mr-2`}></span>
+                  Client Balances
+                </Link>
               </div>
             )}
           </div>

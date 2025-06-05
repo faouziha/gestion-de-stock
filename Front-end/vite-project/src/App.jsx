@@ -43,6 +43,9 @@ import DisplayCategories from './Components/Dashboard components/Categories/Disp
 import AddCategory from './Components/Dashboard components/Categories/AddCategory'
 import EditCategory from './Components/Dashboard components/Categories/EditCategory'
 import ViewCategory from './Components/Dashboard components/Categories/ViewCategory'
+import DisplayClientSoldes from './Components/Dashboard components/ClientSolde/DisplayClientSoldes'
+import ViewClientSolde from './Components/Dashboard components/ClientSolde/ViewClientSolde'
+import AddClientTransaction from './Components/Dashboard components/ClientSolde/AddClientTransaction'
 
 
 function App() {
@@ -107,6 +110,11 @@ function App() {
                 <Route path="/categories/add" element={<AddCategory />} />
                 <Route path="/categories/edit/:id" element={<EditCategory />} />
                 <Route path="/categories/view/:id" element={<ViewCategory />} />
+                
+                {/* Client Solde (Balance) Routes */}
+                <Route path="/clients/soldes" element={<DisplayClientSoldes />} />
+                <Route path="/clients/solde/:clientId" element={<ViewClientSolde />} />
+                <Route path="/clients/solde/:clientId/add" element={<AddClientTransaction />} />
                 {/* Add more dashboard routes here */}
               </Route>
             </Routes>

@@ -42,7 +42,7 @@ const CreateClientOrder = () => {
   const statusOptions = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
   
   // Payment method options
-  const paymentMethods = ['Cash', 'Credit Card', 'Bank Transfer', 'Check', 'PayPal'];
+  const paymentMethods = ['Balance', 'Cash', 'Credit Card', 'Bank Transfer', 'Check', 'PayPal'];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -240,14 +240,29 @@ const CreateClientOrder = () => {
     e.preventDefault();
     
     // Validate form
-    if (!validateForm()) return;
+    const errors = {};
     
-    // Prepare order data with total amount
+    if (!orderData.client_id) errors.client_id = 'Client is required';
+    if (!orderData.date) errors.date = 'Order date is required';
+    
+    // Validate order items
+    const validItems = orderItems.filter(item => item.product_id && item.quantity > 0);
+    if (validItems.length === 0) {
+      setError('At least one valid product item is required');
+      return;
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormError(errors);
+      return;
+    }
+    
+    // Prepare order payload
     const orderPayload = {
-      client_id: orderData.client_id,
+      client_id: parseInt(orderData.client_id),
       date: orderData.date,
       status: orderData.status || 'Pending',
-      payment_method: orderData.payment_method,
+      payment_method: orderData.payment_method || 'Cash',
       reference: orderData.reference || `ORD-${Date.now()}`,
       notes: orderData.notes || '',
       total_amount: parseFloat(totalAmount).toFixed(2),
@@ -269,11 +284,47 @@ const CreateClientOrder = () => {
       const response = await axios.post('http://localhost:3000/clientorders', orderPayload);
       
       if (response.data) {
+        // Format currency for display
+        const formatUSD = (amount) => {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+          }).format(amount);
+        };
+        
+        // Show success message with balance information if balance was updated
+        if (response.data.balance_updated) {
+          const message = `Order created successfully. Client balance updated to ${formatUSD(response.data.new_balance)}.`;
+          alert(message);
+        } else {
+          alert('Order created successfully.');
+        }
         navigate('/clientorders');
       }
     } catch (err) {
       console.error('Error creating order:', err);
-      setError('Failed to create order. ' + (err.response?.data?.message || 'Please try again.'));
+      
+      // Handle insufficient balance error specifically
+      if (err.response?.status === 400 && err.response?.data?.message === 'Insufficient balance') {
+        const { current_balance, required_amount } = err.response.data;
+        const shortfall = required_amount - current_balance;
+        
+        const formatUSD = (amount) => {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+          }).format(amount);
+        };
+        
+        setError(
+          `Insufficient client balance. Current balance: ${formatUSD(current_balance)}. ` +
+          `Required amount: ${formatUSD(required_amount)}. ` +
+          `Shortfall: ${formatUSD(shortfall)}. ` +
+          `Please add funds to the client's account before placing this order.`
+        );
+      } else {
+        setError('Failed to create order. ' + (err.response?.data?.message || 'Please try again.'));
+      }
       setSubmitting(false);
     }
   };
