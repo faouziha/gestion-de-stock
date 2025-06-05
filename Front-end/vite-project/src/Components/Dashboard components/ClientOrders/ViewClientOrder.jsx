@@ -7,6 +7,29 @@ import { useTheme } from '../../../context/ThemeContext';
 import './print-styles.css';
 
 const ViewClientOrder = () => {
+  // ...existing state
+  const [blMessage, setBlMessage] = useState("");
+
+  // ...existing code
+
+  // Save to BL handler
+  const handleSaveToBL = async () => {
+    try {
+      setBlMessage("");
+      // Use the full backend URL instead of a relative path
+      const response = await axios.post("http://localhost:3000/api/bl/save", { orderId: order.id, userId: user.id });
+      if (response.data.success) {
+        setOrder({ ...order, savedToBL: true });
+        setBlMessage("Order saved to Bon de Livraison successfully!");
+      } else {
+        setBlMessage(response.data.error || "Failed to save order to BL.");
+      }
+    } catch (error) {
+      console.error('Error saving to BL:', error);
+      setBlMessage("Error saving order to BL: " + (error.response?.data?.error || error.message));
+    }
+  };
+
   // State variables
   const [order, setOrder] = useState(null);
   const [clientInfo, setClientInfo] = useState(null);
@@ -334,6 +357,12 @@ const ViewClientOrder = () => {
   
   return (
     <div id="print-content" className={`print-container p-4 md:p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} overflow-hidden`}>
+      {/* BL Save Message */}
+      {blMessage && (
+        <div className="mb-4 p-2 bg-green-100 text-green-700 rounded no-print">
+          {blMessage}
+        </div>
+      )}
       {/* Header - Not visible when printing */}
       <div className="no-print flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
         <div className="flex flex-col xs:flex-row xs:items-center mb-2 sm:mb-0 w-full sm:w-auto">
@@ -381,6 +410,18 @@ const ViewClientOrder = () => {
               <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${getStatusBadgeColor(order.status)}`}>
                 {order.status || 'N/A'}
               </span>
+              {/* Save to BL button appears when status is Delivered */}
+              {order.status === 'Delivered' && !order.savedToBL && (
+                <button
+                  className="ml-4 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-xs"
+                  onClick={handleSaveToBL}
+                >
+                  Save to BL
+                </button>
+              )}
+              {order.savedToBL && (
+                <span className="ml-4 text-green-600 font-semibold text-xs">Saved to BL!</span>
+              )}
             </p>
             <p>
               <span className="font-medium">Payment Method:</span> {order.payment_method || 'N/A'}
