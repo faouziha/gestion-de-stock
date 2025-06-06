@@ -2,8 +2,13 @@
 
 A comprehensive inventory and order management system built with modern web technologies. This application helps businesses manage their inventory, track orders, handle suppliers and clients, generate invoices, and monitor stock levels in real-time.
 
-## Latest Updates (May 2025)
+## Latest Updates (June 2025)
 
+- **Fixed Brand Management**: Resolved issues with brand editing functionality
+  - Fixed API endpoints to properly handle userId as query parameter
+  - Corrected database column name mismatches between frontend and backend
+  - Added improved error handling and detailed logging for troubleshooting
+  - Ensured proper field mapping between UI components and database schema
 - **Enhanced Multi-Product Orders**: Completely redesigned order system to display multiple products in a single order card for better organization and readability
 - **Improved Order Management**: Added tax calculation (10%) for all orders with consistent display across all views
 - **Responsive UI Enhancements**: All screens now fully responsive on mobile, tablet, and desktop devices
@@ -41,6 +46,19 @@ This application is designed to streamline inventory management processes for sm
 - **User Profile Management**: Users can update their profile information and preferences
 - **Secure Sessions**: JWT-based authentication with proper token management
 - **Password Security**: Bcrypt hashing for secure password storage
+
+### Brand Management
+- **CRUD Operations**: Complete interface to create, read, update, and delete brands
+- **Brand Details**: Store comprehensive information including:
+  - Brand name and description
+  - Logo image with automatic resizing and compression
+  - Brand website URL and founding year
+  - Brand color for UI customization
+- **Brand-Product Association**: Link products to specific brands for better organization
+- **Brand Filtering**: Filter products by brand in the product listing
+- **User-Specific Brands**: Each user only sees brands they have created or have access to
+- **Secure API Integration**: Properly authenticated API endpoints with user validation
+- **Error Handling**: Comprehensive error handling with user-friendly messages
 
 ### Product Management
 - **CRUD Operations**: Comprehensive interface to add, edit, view, and delete products
@@ -385,6 +403,11 @@ The backend is built with Node.js and Express, providing RESTful API endpoints f
 | `/facture` | POST | Create new invoice | Required |
 | `/facture/:id` | PUT | Update invoice | Required |
 | `/facture/:id` | DELETE | Delete invoice | Required |
+| `/brands` | GET | Get all brands | Required |
+| `/brands/:id` | GET | Get brand by ID | Required |
+| `/brands` | POST | Create new brand | Required |
+| `/brands/:id` | PUT | Update brand | Required |
+| `/brands/:id` | DELETE | Delete brand | Required |
 
 ## Frontend Architecture
 

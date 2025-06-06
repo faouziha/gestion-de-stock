@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { FaEdit, FaArrowLeft, FaExternalLinkAlt, FaTrademark } from 'react-icons/fa'
+import { FaEdit, FaArrowLeft, FaExternalLinkAlt, FaTrademark, FaBox } from 'react-icons/fa'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
 
 export default function ViewBrand() {
     const [brand, setBrand] = useState(null);
+    const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { user } = useAuth();
@@ -15,7 +16,7 @@ export default function ViewBrand() {
     const navigate = useNavigate();
     
     useEffect(() => {
-        const fetchBrand = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
                 console.log(`Fetching brand with ID: ${id}`);
@@ -38,6 +39,14 @@ export default function ViewBrand() {
                     console.error("Error loading products for brand:", productError);
                     // We already have basic brand data, so just log this error
                 }
+                
+                // Fetch all products and filter by brand_id
+                const productsResponse = await axios.get(`http://localhost:3000/produit?userId=${user.id}`);
+                // Filter products that belong to this brand
+                const brandProducts = productsResponse.data.filter(product => product.brand_id === parseInt(id));
+                setProducts(brandProducts);
+                console.log('Loaded products for brand:', brandProducts.length);
+                
             } catch (error) {
                 console.error("Error fetching brand:", error);
                 if (error.response) {
@@ -52,8 +61,8 @@ export default function ViewBrand() {
             }
         };
         
-        fetchBrand();
-    }, [id]);
+        fetchData();
+    }, [id, user.id]);
 
     if (loading) {
         return (
@@ -222,54 +231,65 @@ export default function ViewBrand() {
                             </div>
                         </div>
                         
-                        {/* Sample Products Section */}
-                        {brand.sample_produit && brand.sample_produit.length > 0 && (
-                            <div className="mt-6 pt-6 border-t border-gray-200">
-                                <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                    Products
-                                </h3>
-                                
+                        {/* Products Section */}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                            <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                Products in this Brand
+                            </h3>
+                            
+                            {products.length === 0 ? (
+                                <div className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-6 text-center`}>
+                                    <FaBox className={`mx-auto text-4xl mb-3 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                                    <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+                                        No products in this brand yet
+                                    </p>
+                                    <Link
+                                        to="/products/add"
+                                        className="text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                        Add a Product
+                                    </Link>
+                                </div>
+                            ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                    {brand.sample_produit.map(product => (
+                                    {products.map(product => (
                                         <Link 
                                             key={product.id}
                                             to={`/products/view/${product.id}`}
                                             className={`${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'} rounded-lg p-4 transition-colors flex items-center`}
                                         >
-                                            <div className="w-12 h-12 mr-4">
-                                                {product.image_url ? (
+                                            <div className="w-16 h-16 mr-4 rounded-md overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex-shrink-0">
+                                                {product.image ? (
                                                     <img 
-                                                        src={product.image_url} 
-                                                        alt={product.name}
-                                                        className="h-full w-full object-cover rounded-md"
+                                                        src={product.image} 
+                                                        alt={product.nom}
+                                                        className="h-full w-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                                                        }}
                                                     />
                                                 ) : (
-                                                    <div className={`h-full w-full rounded-md flex items-center justify-center ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>No image</span>
+                                                    <div className="h-full w-full flex items-center justify-center">
+                                                        <FaBox className={`${darkMode ? 'text-gray-600' : 'text-gray-400'}`} />
                                                     </div>
                                                 )}
                                             </div>
                                             <div>
                                                 <h4 className={`font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'} text-sm`}>
-                                                    {product.name}
+                                                    {product.nom}
                                                 </h4>
-                                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                    ${product.price}
-                                                </p>
+                                                {product.prix && (
+                                                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                        {product.prix} $
+                                                    </p>
+                                                )}
                                             </div>
                                         </Link>
                                     ))}
-                                    
-                                    {brand.product_count > brand.sample_produit.length && (
-                                        <div className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 flex items-center justify-center`}>
-                                            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                + {brand.product_count - brand.sample_produit.length} more products
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,195 @@
+@startuml Stock Management System Sequence Diagram
+
+!theme plain
+skinparam dpi 300
+skinparam responseMessageBelowArrow true
+skinparam sequenceMessageAlign center
+
+actor User
+participant "Frontend\n(React)" as FE
+participant "Backend\n(Express)" as BE
+participant "Database\n(PostgreSQL)" as DB
+
+== Authentication ==
+
+User -> FE: Login with credentials
+activate FE
+FE -> BE: POST /login (email, password)
+activate BE
+BE -> DB: Query users table
+activate DB
+DB --> BE: Return user record
+deactivate DB
+BE -> BE: Validate password
+BE --> FE: Return JWT token + user info
+deactivate BE
+FE -> FE: Store token in localStorage
+FE --> User: Display dashboard
+deactivate FE
+
+== Brand Management Flow ==
+
+group View All Brands
+    User -> FE: Navigate to brands page
+    activate FE
+    FE -> BE: GET /brands?userId={userId}
+    activate BE
+    BE -> DB: SELECT * FROM brands
+    activate DB
+    DB --> BE: Return brands data
+    deactivate DB
+    
+    BE -> DB: Get product count for each brand
+    activate DB
+    DB --> BE: Return product counts
+    deactivate DB
+    
+    BE --> FE: Return brands with product counts
+    deactivate BE
+    FE --> User: Display brands list
+    deactivate FE
+end
+
+group View Brand Details
+    User -> FE: Click on specific brand
+    activate FE
+    FE -> BE: GET /brands/{id}
+    activate BE
+    BE -> DB: SELECT * FROM brands WHERE id = ?
+    activate DB
+    DB --> BE: Return brand details
+    deactivate DB
+    
+    BE -> DB: SELECT * FROM produit WHERE brand_id = ?
+    activate DB
+    DB --> BE: Return brand's products
+    deactivate DB
+    
+    BE --> FE: Return brand data with products
+    deactivate BE
+    FE --> User: Display brand details with products
+    deactivate FE
+end
+
+group Edit Brand
+    User -> FE: Click "Edit" button
+    activate FE
+    FE -> BE: GET /brands/{id}?userId={userId}
+    activate BE
+    BE -> DB: SELECT * FROM brands WHERE id = ?
+    activate DB
+    DB --> BE: Return brand data
+    deactivate DB
+    BE --> FE: Return brand data
+    deactivate BE
+    FE --> User: Display edit form with brand data
+    
+    User -> FE: Update brand information
+    User -> FE: Submit form
+    FE -> FE: Validate form inputs
+    FE -> FE: Process image if uploaded
+    
+    FE -> BE: PUT /brands/{id}?userId={userId}
+    activate BE
+    BE -> BE: Validate user permission
+    BE -> DB: UPDATE brands SET ... WHERE id = ?
+    activate DB
+    DB --> BE: Confirm update
+    deactivate DB
+    BE --> FE: Return success response
+    deactivate BE
+    FE --> User: Redirect to brand details page
+    deactivate FE
+end
+
+== Order Management Flow ==
+
+group Create Delivery Note (Bon de Livraison)
+    User -> FE: Create delivery note from order
+    activate FE
+    FE -> BE: POST /api/bl/save
+    activate BE
+    BE -> DB: BEGIN TRANSACTION
+    activate DB
+    
+    BE -> DB: INSERT INTO bl_livraison (...)
+    DB --> BE: Return BL ID
+    
+    BE -> DB: SELECT * FROM commande WHERE id = ?
+    DB --> BE: Return order details
+    
+    BE -> DB: SELECT * FROM clients WHERE id = ?
+    DB --> BE: Return client details
+    
+    BE -> DB: INSERT INTO bl_items (...)
+    DB --> BE: Confirm insert
+    
+    BE -> DB: COMMIT TRANSACTION
+    DB --> BE: Confirm transaction
+    deactivate DB
+    
+    BE --> FE: Return success with BL data
+    deactivate BE
+    FE --> User: Display success message
+    deactivate FE
+end
+
+== Product Stock Management ==
+
+group Check Product Stock
+    User -> FE: View product stock
+    activate FE
+    FE -> BE: GET /produit?userId={userId}
+    activate BE
+    BE -> DB: SELECT * FROM produit
+    activate DB
+    DB --> BE: Return products data
+    deactivate DB
+    BE --> FE: Return products with stock info
+    deactivate BE
+    FE --> User: Display products with stock levels
+    deactivate FE
+end
+
+group Update Product Stock
+    User -> FE: Update product quantity
+    activate FE
+    FE -> BE: PUT /produit/{id}
+    activate BE
+    BE -> DB: UPDATE produit SET quantite = ? WHERE id = ?
+    activate DB
+    DB --> BE: Confirm update
+    deactivate DB
+    BE --> FE: Return success response
+    deactivate BE
+    FE --> User: Display updated stock
+    deactivate FE
+end
+
+== Invoice Management ==
+
+group Generate Invoice
+    User -> FE: Create invoice
+    activate FE
+    FE -> BE: POST /facture
+    activate BE
+    BE -> DB: BEGIN TRANSACTION
+    activate DB
+    
+    BE -> DB: INSERT INTO facture (...)
+    DB --> BE: Return invoice ID
+    
+    BE -> DB: INSERT INTO facture_items (...)
+    DB --> BE: Confirm insert
+    
+    BE -> DB: COMMIT TRANSACTION
+    DB --> BE: Confirm transaction
+    deactivate DB
+    
+    BE --> FE: Return success with invoice data
+    deactivate BE
+    FE --> User: Display invoice
+    deactivate FE
+end
+
+@enduml

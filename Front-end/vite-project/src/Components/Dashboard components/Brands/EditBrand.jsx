@@ -28,9 +28,14 @@ export default function EditBrand() {
     // Fetch brand data
     useEffect(() => {
         const fetchBrand = async () => {
+            if (!user?.id) return;
+            
             try {
                 setFetchLoading(true);
-                const response = await axios.get(`http://localhost:3000/brands/${id}`);
+                setError(null);
+                
+                // Add userId as a query parameter to the API request
+                const response = await axios.get(`http://localhost:3000/brands/${id}?userId=${user.id}`);
                 const brandData = response.data;
                 
                 setFormData({
@@ -47,14 +52,28 @@ export default function EditBrand() {
                 }
             } catch (error) {
                 console.error('Error fetching brand:', error);
-                setError('Failed to load brand details. Please try again.');
+                if (error.response) {
+                    // Handle specific error responses from the server
+                    if (error.response.status === 404) {
+                        setError('Brand not found. It may have been deleted.');
+                    } else if (error.response.status === 403) {
+                        setError('You do not have permission to edit this brand.');
+                    } else {
+                        setError(`Error: ${error.response.data?.message || 'Failed to load brand details'} (${error.response.status})`);
+                    }
+                } else if (error.request) {
+                    // Network error
+                    setError('Network error. Please check your connection and try again.');
+                } else {
+                    setError('Failed to load brand details. Please try again.');
+                }
             } finally {
                 setFetchLoading(false);
             }
         };
         
         fetchBrand();
-    }, [id]);
+    }, [id, user]);
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -146,10 +165,10 @@ export default function EditBrand() {
                 website = `https://${website}`;
             }
             
-            const response = await axios.put(`http://localhost:3000/brands/${id}`, {
+            // Include userId as a query parameter instead of in the request body
+            const response = await axios.put(`http://localhost:3000/brands/${id}?userId=${user.id}`, {
                 ...formData,
-                website,
-                userId: user.id
+                website
             });
             
             if (response.data.success) {

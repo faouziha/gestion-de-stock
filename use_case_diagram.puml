@@ -1,0 +1,167 @@
+@startuml Stock Management System Use Case Diagram
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecaseBorderColor #000000
+skinparam usecaseBackgroundColor #EEEEEE
+
+' Actors
+actor "Admin" as admin
+actor "User" as user
+actor "Client" as client
+actor "Supplier" as supplier
+
+rectangle "Stock Management System" {
+    ' Authentication & User Management
+    package "Authentication & User Management" {
+        usecase "Register" as register
+        usecase "Login" as login
+        usecase "Update Profile" as updateProfile
+        usecase "Manage Users" as manageUsers
+        usecase "Assign Admin Role" as assignAdminRole
+    }
+    
+    ' Product Management
+    package "Product Management" {
+        usecase "View Products" as viewProducts
+        usecase "Add Product" as addProduct
+        usecase "Edit Product" as editProduct
+        usecase "Delete Product" as deleteProduct
+        usecase "Check Stock" as checkStock
+        usecase "Manage Product Categories" as manageCategories
+        usecase "Manage Product Brands" as manageBrands
+    }
+    
+    ' Brand Management
+    package "Brand Management" {
+        usecase "View Brands" as viewBrands
+        usecase "Add Brand" as addBrand
+        usecase "Edit Brand" as editBrand
+        usecase "Delete Brand" as deleteBrand
+    }
+    
+    ' Category Management
+    package "Category Management" {
+        usecase "View Categories" as viewCategories
+        usecase "Add Category" as addCategory
+        usecase "Edit Category" as editCategory
+        usecase "Delete Category" as deleteCategory
+    }
+    
+    ' Order Management
+    package "Order Management" {
+        usecase "Create Order" as createOrder
+        usecase "View Orders" as viewOrders
+        usecase "Update Order" as updateOrder
+        usecase "Delete Order" as deleteOrder
+        usecase "Track Order Status" as trackOrderStatus
+        usecase "Create Multi-Client Order" as createMultiClientOrder
+        usecase "Manage Supplier Orders" as manageSupplierOrders
+    }
+    
+    ' Invoice Management
+    package "Invoice Management" {
+        usecase "Generate Invoice" as generateInvoice
+        usecase "View Invoices" as viewInvoices
+        usecase "Update Invoice" as updateInvoice
+        usecase "Delete Invoice" as deleteInvoice
+        usecase "Generate Delivery Note" as generateDeliveryNote
+    }
+    
+    ' Client Management
+    package "Client Management" {
+        usecase "View Clients" as viewClients
+        usecase "Add Client" as addClient
+        usecase "Edit Client" as editClient
+        usecase "Delete Client" as deleteClient
+        usecase "Track Client Balance" as trackClientBalance
+    }
+    
+    ' Supplier Management
+    package "Supplier Management" {
+        usecase "View Suppliers" as viewSuppliers
+        usecase "Add Supplier" as addSupplier
+        usecase "Edit Supplier" as editSupplier
+        usecase "Delete Supplier" as deleteSupplier
+    }
+    
+    ' Statistics & Analytics
+    package "Statistics & Analytics" {
+        usecase "View Dashboard" as viewDashboard
+        usecase "Generate Reports" as generateReports
+        usecase "View Entity Statistics" as viewEntityStats
+    }
+}
+
+' Relationships for Admin
+admin --> login
+admin --> register
+admin --> manageUsers
+admin --> assignAdminRole
+admin --> viewDashboard
+admin --> generateReports
+admin --> viewEntityStats
+
+' Relationships for User
+user --> login
+user --> updateProfile
+user --> viewProducts
+user --> addProduct
+user --> editProduct
+user --> deleteProduct
+user --> checkStock
+user --> manageCategories
+user --> manageBrands
+user --> viewBrands
+user --> addBrand
+user --> editBrand
+user --> deleteBrand
+user --> viewCategories
+user --> addCategory
+user --> editCategory
+user --> deleteCategory
+user --> createOrder
+user --> viewOrders
+user --> updateOrder
+user --> deleteOrder
+user --> trackOrderStatus
+user --> createMultiClientOrder
+user --> manageSupplierOrders
+user --> generateInvoice
+user --> viewInvoices
+user --> updateInvoice
+user --> deleteInvoice
+user --> generateDeliveryNote
+user --> viewClients
+user --> addClient
+user --> editClient
+user --> deleteClient
+user --> trackClientBalance
+user --> viewSuppliers
+user --> addSupplier
+user --> editSupplier
+user --> deleteSupplier
+user --> viewDashboard
+
+' Relationships for Client
+client --> viewOrders
+client --> trackOrderStatus
+
+' Relationships for Supplier
+supplier --> manageSupplierOrders
+
+' Include relationships
+viewProducts ..> checkStock : <<include>>
+createOrder ..> checkStock : <<include>>
+generateInvoice ..> createOrder : <<include>>
+generateDeliveryNote ..> createOrder : <<include>>
+manageCategories ..> viewCategories : <<include>>
+manageCategories ..> addCategory : <<include>>
+manageCategories ..> editCategory : <<include>>
+manageCategories ..> deleteCategory : <<include>>
+manageBrands ..> viewBrands : <<include>>
+manageBrands ..> addBrand : <<include>>
+manageBrands ..> editBrand : <<include>>
+manageBrands ..> deleteBrand : <<include>>
+
+@enduml

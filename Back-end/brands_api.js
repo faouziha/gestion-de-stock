@@ -45,12 +45,22 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { basic } = req.query;
+        const { basic, userId } = req.query;
         
-        console.log(`Fetching brand ID ${id}, basic mode: ${basic}`);
+        console.log(`Fetching brand ID ${id}, basic mode: ${basic}, userId: ${userId}`);
         
+        // Log the exact SQL query we're about to execute
         const query = "SELECT * FROM brands WHERE id = $1";
+        console.log('Executing query:', query, 'with params:', [id]);
+        
+        // Execute the query
         const result = await db.query(query, [id]);
+        
+        // Log the result for debugging
+        console.log('Query result rows count:', result.rows.length);
+        if (result.rows.length > 0) {
+            console.log('First row columns:', Object.keys(result.rows[0]));
+        }
         
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: "Brand not found" });
@@ -83,8 +93,9 @@ router.get("/:id", async (req, res) => {
         
         if (count > 0) {
             // Get sample of produit with this brand
+            // Make sure we're using the correct column names for the produit table
             const produitQuery = `
-                SELECT id, name, sku, price, image_url 
+                SELECT id, nom, prix, image as image_url 
                 FROM produit 
                 WHERE brand_id = $1 
                 LIMIT 10
@@ -101,10 +112,17 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error("Error fetching brand:", error.message);
         console.error("Error stack:", error.stack);
+        
+        // More detailed error information
+        if (error.code === '42703') { // PostgreSQL error code for undefined_column
+            console.error("Column does not exist error. Check your table schema.");
+        }
+        
         res.status(500).json({ 
             success: false, 
-            error: "Failed to fetch brand details", 
+            error: error.message || "Failed to fetch brand details", 
             message: error.message,
+            code: error.code,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
@@ -143,7 +161,13 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, logo_url, website, color, founded_year, userId } = req.body;
+        // Get userId from query parameters or request body
+        const userId = req.query.userId || req.body.userId;
+        const { name, description, logo_url, website, color, founded_year } = req.body;
+        
+        console.log(`Updating brand ID ${id}, userId: ${userId}`);
+        console.log('Request body:', req.body);
+        console.log('Request query:', req.query);
         
         // Check if brand exists and belongs to the user
         const brandCheck = await db.query("SELECT * FROM brands WHERE id = $1", [id]);
