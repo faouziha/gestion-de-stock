@@ -185,22 +185,7 @@ export default function ViewClient() {
                 </div>
               )}
               
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <button
-                  onClick={() => navigate(`/clients/edit/${id}`)}
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center"
-                >
-                  <FaEdit className="mr-2" />
-                  Edit Client
-                </button>
-                <button
-                  onClick={() => navigate('/clients')}
-                  className={`w-full sm:w-auto ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'} px-4 py-2 rounded-md transition-colors flex items-center justify-center`}
-                >
-                  <FaArrowLeft className="mr-2" />
-                  Back to Clients
-                </button>
-              </div>
+              
             </div>
           </div>
         )}
