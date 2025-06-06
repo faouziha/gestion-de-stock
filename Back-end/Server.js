@@ -10,6 +10,8 @@ const categoriesRouter = require("./categories_api");
 const brandsSetupRouter = require("./brands_setup");
 const brandsRouter = require("./brands_api");
 const clientSoldeRouter = require("./client_solde_routes");
+const reportSetupRouter = require("./report_setup");
+const reportApiRouter = require("./report_api");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
@@ -70,6 +72,12 @@ app.use('/brands', brandsRouter);
 
 // Register the client solde router
 app.use(clientSoldeRouter);
+
+// Register the report setup router
+app.use(reportSetupRouter);
+
+// Register the report API router
+app.use('/reports', reportApiRouter);
 
 // Serve static files from the uploads directory
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

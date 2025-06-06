@@ -51,6 +51,7 @@ import DisplayBrands from './Components/Dashboard components/Brands/DisplayBrand
 import AddBrand from './Components/Dashboard components/Brands/AddBrand'
 import ViewBrand from './Components/Dashboard components/Brands/ViewBrand'
 import EditBrand from './Components/Dashboard components/Brands/EditBrand'
+import Reports from './Components/Dashboard components/Reports/Reports'
 
 
 function App() {
@@ -127,6 +128,9 @@ function App() {
                 <Route path="/brands/add" element={<AddBrand />} />
                 <Route path="/brands/view/:id" element={<ViewBrand />} />
                 <Route path="/brands/edit/:id" element={<EditBrand />} />
+                
+                {/* Reports Routes */}
+                <Route path="/reports" element={<Reports />} />
                 {/* Add more dashboard routes here */}
               </Route>
             </Routes>
