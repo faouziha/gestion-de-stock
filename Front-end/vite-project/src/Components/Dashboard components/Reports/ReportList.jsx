@@ -124,16 +124,16 @@ const ReportList = ({ reports, onRefresh, onViewReport }) => {
                       </div>
                     </div>
                     
-                    <div className={`border-t ${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'} px-4 py-3 flex space-x-2`}>
+                    <div className={`border-t ${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'} px-4 py-3 flex flex-col sm:flex-row gap-2`}>
                       <button
-                        className={`flex-1 px-4 py-2 rounded flex items-center justify-center text-sm transition-colors ${darkMode ? 'bg-blue-900 text-blue-100 hover:bg-blue-800' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
-                        onClick={() => handleViewReport(report)}
+                        className={`w-full sm:flex-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded flex items-center justify-center text-xs sm:text-sm transition-colors ${darkMode ? 'bg-blue-900 text-blue-100 hover:bg-blue-800' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+                        onClick={() => onViewReport(report)}
                       >
                         <FaEye className="mr-1" />
                         View
                       </button>
                       <button
-                        className={`flex-1 px-4 py-2 rounded flex items-center justify-center text-sm transition-colors ${darkMode ? 'bg-red-900 text-red-100 hover:bg-red-800' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
+                        className={`w-full sm:flex-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded flex items-center justify-center text-xs sm:text-sm transition-colors ${darkMode ? 'bg-red-900 text-red-100 hover:bg-red-800' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
                         onClick={() => handleDeleteClick(report)}
                       >
                         <FaTrash className="mr-1" />
@@ -146,23 +146,25 @@ const ReportList = ({ reports, onRefresh, onViewReport }) => {
           </div>
           
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-4 px-4 py-3 border-t sm:px-6">
-            <div className="hidden sm:flex items-center">
-              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Showing
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-4 px-2 sm:px-4 py-3 border-t sm:px-6 gap-2">
+            <div className="flex items-center text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start mb-2 sm:mb-0">
+              <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <span className="hidden sm:inline">Showing </span>
                 <span className="font-medium mx-1">{page * rowsPerPage + 1}</span>
-                to
+                <span className="hidden sm:inline">to</span>
+                <span className="sm:hidden">-</span>
                 <span className="font-medium mx-1">
                   {Math.min((page + 1) * rowsPerPage, reports.length)}
                 </span>
-                of
+                <span className="hidden sm:inline">of</span>
+                <span className="sm:hidden">/</span>
                 <span className="font-medium mx-1">{reports.length}</span>
-                results
+                <span className="hidden sm:inline">results</span>
               </p>
             </div>
             <div className="flex items-center space-x-2">
               <select
-                className={`block w-24 px-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'border-gray-300'}`}
+                className={`block w-16 sm:w-24 px-2 sm:px-3 py-1 text-xs sm:text-sm border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'border-gray-300'}`}
                 value={rowsPerPage}
                 onChange={(e) => handleChangeRowsPerPage(e)}
               >

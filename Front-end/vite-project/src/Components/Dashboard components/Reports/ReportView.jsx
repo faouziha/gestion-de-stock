@@ -212,25 +212,25 @@ const ReportView = ({ reportId }) => {
   return (
     <div className={`pt-6 pb-4 mt-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
       {/* Report Header with Print Button */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <div>
-          <h2 className="text-xl font-bold mb-2">
+          <h2 className={`text-lg sm:text-xl font-bold mb-2 break-words ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             {report.title}
           </h2>
           {report.description && (
-            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm sm:text-base break-words`}>
               {report.description}
             </p>
           )}
-          <div className={`flex items-center text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`flex items-center text-xs sm:text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <FaCalendar className="mr-1" />
-            <span>{formatDate(report.date_range_start)} - {formatDate(report.date_range_end)}</span>
+            <span className="break-words">{formatDate(report.date_range_start)} - {formatDate(report.date_range_end)}</span>
           </div>
         </div>
         <button
           onClick={handlePrint}
           disabled={isPrinting}
-          className="flex items-center space-x-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+          className="flex items-center justify-center w-full sm:w-auto space-x-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-300 text-sm"
         >
           <FaPrint className="mr-1" />
           <span>{isPrinting ? 'Printing...' : 'Print Report'}</span>
@@ -238,7 +238,7 @@ const ReportView = ({ reportId }) => {
       </div>
 
       {/* Report Info Cards - Responsive grid layout */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
         <div>
           <div className={`border rounded-lg h-full p-4 ${darkMode ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-blue-50'}`}>
             <div className="flex items-center mb-2">
@@ -329,8 +329,8 @@ const ReportView = ({ reportId }) => {
               <tbody className={`divide-y ${darkMode ? 'bg-gray-900 divide-gray-700' : 'bg-white divide-gray-200'}`}>
                 {reportDetails.map((detail) => (
                   <tr key={detail.id} className={`${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
-                    <td className={`px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {detail.product_name || 'N/A'}
+                    <td className={`px-3 py-3 sm:px-6 sm:py-4 text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <div className="truncate max-w-[120px] sm:max-w-full">{detail.product_name || 'N/A'}</div>
                     </td>
                     <td className={`hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {detail.category_name ? (

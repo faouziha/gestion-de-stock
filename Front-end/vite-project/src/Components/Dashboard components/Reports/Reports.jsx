@@ -88,7 +88,7 @@ const Reports = () => {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 my-2 sm:my-4">
-      <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg p-3 sm:p-6 flex flex-col`}>
+      <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg p-2 sm:p-4 md:p-6 flex flex-col w-full overflow-hidden`}>
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <div className="flex items-center space-x-2">
             {selectedReport ? (
@@ -99,12 +99,12 @@ const Reports = () => {
                 >
                   <FaArrowLeft className="text-lg sm:text-xl" />
                 </button>
-                <h1 className="text-lg sm:text-xl font-bold dark:text-white truncate max-w-[180px] sm:max-w-none">{selectedReport.title}</h1>
+                <h1 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'} truncate max-w-[180px] sm:max-w-none`}>{selectedReport.title}</h1>
               </>
             ) : (
               <>
                 <FaChartBar className="text-blue-600 text-xl sm:text-2xl" />
-                <h1 className="text-lg sm:text-xl font-bold dark:text-white">Reports</h1>
+                <h1 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Reports</h1>
               </>
             )}
           </div>

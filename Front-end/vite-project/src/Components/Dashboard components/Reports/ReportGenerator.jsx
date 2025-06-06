@@ -43,7 +43,7 @@ const ReportGenerator = ({ onSubmit, onCancel }) => {
   };
 
   return (
-    <div className={`rounded-lg shadow p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-50 text-gray-800'}`}>
+    <div className={`rounded-lg shadow p-4 sm:p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-50 text-gray-800'}`}>
       <h2 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Generate New Report</h2>
       <hr className={`mb-6 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`} />
       
@@ -104,17 +104,17 @@ const ReportGenerator = ({ onSubmit, onCancel }) => {
           </div>
         </div>
         
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 mt-6">
           <button 
             type="button" 
-            className={`px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${darkMode ? 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+            className={`w-full sm:w-auto px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${darkMode ? 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
             onClick={onCancel}
           >
             Cancel
           </button>
           <button 
             type="button" 
-            className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${darkMode ? 'bg-blue-700 hover:bg-blue-800 focus:ring-blue-600' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
+            className={`w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${darkMode ? 'bg-blue-700 hover:bg-blue-800 focus:ring-blue-600' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
             onClick={handleSubmit}
           >
             Generate Report
