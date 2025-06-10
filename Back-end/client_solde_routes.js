@@ -134,7 +134,7 @@ router.post('/clients/:clientId/solde', async (req, res) => {
         await client.query('BEGIN');
         
         const { clientId } = req.params;
-        const { amount, operation_type, reference, notes, userId } = req.body;
+        const { amount, operation_type, payment_method, reference, notes, userId } = req.body;
         
         if (!userId) {
             return res.status(400).json({ error: "User ID is required" });
@@ -167,14 +167,14 @@ router.post('/clients/:clientId/solde', async (req, res) => {
         // Add transaction to history
         const addTransactionQuery = `
             INSERT INTO client_solde_details 
-            (client_id, amount, operation_type, reference, notes, userid)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            (client_id, amount, operation_type, payment_method, reference, notes, userid)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
         `;
         
         const transactionResult = await client.query(
             addTransactionQuery, 
-            [clientId, Math.abs(parseFloat(amount)), operation_type, reference || '', notes || '', userId]
+            [clientId, Math.abs(parseFloat(amount)), operation_type, payment_method || 'cash', reference || '', notes || '', userId]
         );
         
         // Update or create client balance

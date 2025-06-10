@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCalendar, FaFileAlt, FaDollarSign, FaBoxes, FaShoppingCart, FaChartLine, FaPrint } from 'react-icons/fa';
+import { FaCalendar, FaFileAlt, FaDollarSign, FaBoxes, FaShoppingCart, FaChartLine, FaPrint, FaPlus } from 'react-icons/fa';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
@@ -13,6 +13,7 @@ const ReportView = ({ reportId }) => {
   const [error, setError] = useState('');
   const [report, setReport] = useState(null);
   const [reportDetails, setReportDetails] = useState([]);
+  const [newProducts, setNewProducts] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
   
   // Force re-render on theme change
@@ -29,6 +30,31 @@ const ReportView = ({ reportId }) => {
         if (response.data.success) {
           setReport(response.data.report);
           setReportDetails(response.data.details);
+          
+          // Fetch newly added products for this report's date range
+          if (response.data.report) {
+            try {
+              console.log('Fetching new products with date range:', {
+                startDate: response.data.report.date_range_start,
+                endDate: response.data.report.date_range_end
+              });
+              
+              const newProductsResponse = await axios.get(
+                `${config.API_URL}/products/new?startDate=${response.data.report.date_range_start}&endDate=${response.data.report.date_range_end}&userId=${user.id}`
+              );
+              
+              console.log('New products response:', newProductsResponse.data);
+              
+              if (newProductsResponse.data.success) {
+                setNewProducts(newProductsResponse.data.products || []);
+                console.log('Set new products:', newProductsResponse.data.products?.length || 0, 'products');
+              } else {
+                console.error('Error fetching new products:', newProductsResponse.data.error);
+              }
+            } catch (error) {
+              console.error('Exception fetching new products:', error.message);
+            }
+          }
         } else {
           setError(response.data.error || 'Failed to load report data');
         }
@@ -75,6 +101,23 @@ const ReportView = ({ reportId }) => {
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right">${detail.quantity_sold}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${revenue}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${averagePrice}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // Generate the new products HTML
+    let newProductsHtml = '';
+    if (newProducts && newProducts.length > 0) {
+      newProductsHtml = newProducts.map((product) => {
+        return `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd">${product.nom || 'N/A'}</td>
+            <td style="padding: 8px; border: 1px solid #ddd">${product.category_name || 'N/A'}</td>
+            <td style="padding: 8px; border: 1px solid #ddd">${product.brand_name || 'N/A'}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right">${product.total || 0}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${parseFloat(product.prix || 0).toFixed(2)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right">${formatDate(product.created_at) || 'N/A'}</td>
           </tr>
         `;
       }).join('');
@@ -159,6 +202,23 @@ const ReportView = ({ reportId }) => {
                 <td style="text-align: right; padding: 8px;">$${parseFloat(report.average_order_value || 0).toFixed(2)}</td>
               </tr>
             </tfoot>
+          </table>
+          
+          <h2 style="margin-top: 30px;">Newly Added Products</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Brand</th>
+                <th style="text-align: right">Quantity</th>
+                <th style="text-align: right">Price</th>
+                <th style="text-align: right">Added Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${newProductsHtml || '<tr><td colspan="6" style="text-align:center">No new products were added during this report period</td></tr>'}
+            </tbody>
           </table>
         </div>
         
@@ -348,6 +408,64 @@ const ReportView = ({ reportId }) => {
                     </td>
                     <td className={`hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} text-right`}>
                       ${Number(detail.average_price).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      
+      {/* Newly Added Products Section */}
+      <div className="mb-4 sm:mb-6">
+        <div className="flex items-center mb-3">
+          <FaPlus className="text-blue-500 mr-2" />
+          <h3 className="text-lg font-medium">
+            Newly Added Products
+          </h3>
+        </div>
+        <hr className={`mb-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+        
+        {newProducts.length === 0 ? (
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative">
+            No new products were added during this report period
+          </div>
+        ) : (
+          <div className={`overflow-x-auto border rounded-lg ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <table className={`min-w-full divide-y table-auto ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+              <thead className={`${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                <tr>
+                  <th scope="col" className={`px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Product</th>
+                  <th scope="col" className={`hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Category</th>
+                  <th scope="col" className={`hidden md:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Brand</th>
+                  <th scope="col" className={`px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Quantity</th>
+                  <th scope="col" className={`px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Price</th>
+                  <th scope="col" className={`hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Added Date</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${darkMode ? 'bg-gray-900 divide-gray-700' : 'bg-white divide-gray-200'}`}>
+                {newProducts.map((product) => (
+                  <tr key={product.id} className={`${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
+                    <td className={`px-3 py-3 sm:px-6 sm:py-4 text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <div className="truncate max-w-[120px] sm:max-w-full">{product.nom || 'N/A'}</div>
+                    </td>
+                    <td className={`hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {product.category_name ? (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${darkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'}`}>
+                          {product.category_name}
+                        </span>
+                      ) : 'N/A'}
+                    </td>
+                    <td className={`hidden md:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.brand_name || 'N/A'}</td>
+                    <td className={`px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} text-right`}>{product.total || 0}</td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-right">
+                      <span className={`font-medium ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                        ${Number(product.prix || 0).toFixed(2)}
+                      </span>
+                    </td>
+                    <td className={`hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} text-right`}>
+                      {formatDate(product.created_at)}
                     </td>
                   </tr>
                 ))}

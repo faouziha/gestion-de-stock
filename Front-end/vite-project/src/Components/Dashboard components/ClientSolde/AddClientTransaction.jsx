@@ -20,6 +20,7 @@ export default function AddClientTransaction() {
   const [formData, setFormData] = useState({
     amount: '',
     operation_type: 'deposit',
+    payment_method: 'cash',
     reference: '',
     notes: ''
   });
@@ -79,6 +80,7 @@ export default function AddClientTransaction() {
       setFormData({
         amount: '',
         operation_type: 'deposit',
+        payment_method: 'cash',
         reference: '',
         notes: ''
       });
@@ -194,6 +196,28 @@ export default function AddClientTransaction() {
                   <option value="withdrawal">Withdrawal (Remove from balance)</option>
                   <option value="payment">Payment for order</option>
                   <option value="refund">Refund (Return money)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                  Payment Method
+                </label>
+                <select
+                  name="payment_method"
+                  value={formData.payment_method}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-3 sm:py-2 text-base sm:text-sm border ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  required
+                >
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="debit_card">Debit Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
               

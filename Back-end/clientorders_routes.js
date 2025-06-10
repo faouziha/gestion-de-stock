@@ -39,13 +39,11 @@ router.get('/clientorders', async (req, res) => {
       SELECT c.*, cl.nom as client_lastname, cl.prenom as client_firstname,
              cl.email as client_email, cl.telephone as client_phone
       FROM commande c
-      LEFT JOIN clients cl ON (
-        CASE WHEN c.customer_name ~ E'^\\d+$' THEN
-          cl.id = c.customer_name::integer
-        ELSE
-          FALSE
-        END
-      )
+      LEFT JOIN clients cl ON (cl.id = CASE 
+                                WHEN c.customer_name ~ E'^\\d+$' 
+                                THEN c.customer_name::integer 
+                                ELSE NULL 
+                              END)
       WHERE c.userid = $1 AND (c.is_parent IS NULL OR c.is_parent = false)
       ORDER BY c.date_commande DESC
     `;
@@ -54,10 +52,32 @@ router.get('/clientorders', async (req, res) => {
     
     // For each order, get its order details from the order_details table
     const formattedOrders = await Promise.all(orders.rows.map(async (order) => {
-      // Check if customer_name is a client ID
-      let clientName = order.customer_name;
-      if (order.client_firstname || order.client_lastname) {
-        clientName = `${order.client_firstname || ''} ${order.client_lastname || ''}`.trim();
+      // Determine client name - prioritize first and last name from clients table
+      let clientName;
+      if (order.customer_name && order.customer_name.match(/^\d+$/)) {
+        // If customer_name is a numeric ID, use the client's first and last name
+        if (order.client_firstname || order.client_lastname) {
+          clientName = `${order.client_firstname || ''} ${order.client_lastname || ''}`.trim();
+        } else {
+          // If we couldn't get the name from the join, try fetching it directly
+          try {
+            const clientQuery = 'SELECT nom, prenom FROM clients WHERE id = $1';
+            const clientResult = await executeQuery(clientQuery, [parseInt(order.customer_name)]);
+            
+            if (clientResult.rows.length > 0) {
+              const client = clientResult.rows[0];
+              clientName = `${client.prenom || ''} ${client.nom || ''}`.trim();
+            } else {
+              clientName = order.customer_name; // Fallback to ID if client not found
+            }
+          } catch (err) {
+            console.error('Error fetching client details:', err);
+            clientName = order.customer_name; // Fallback on error
+          }
+        }
+      } else {
+        // If customer_name is already a name string, use it directly
+        clientName = order.customer_name;
       }
       
       // Fetch order details

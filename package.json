@@ -7,12 +7,16 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build": "cd Front-end/vite-project && npm install && npm run build"
+    "build": "cd Front-end/vite-project && npm install && npm run build",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd Back-end && npm run dev",
+    "dev:frontend": "cd Front-end/vite-project && npm run dev"
   },
   "devDependencies": {
     "gh-pages": "^6.3.0"
   },
   "dependencies": {
+    "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

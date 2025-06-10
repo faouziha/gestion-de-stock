@@ -214,6 +214,9 @@ export default function ViewClientSolde() {
                             Amount
                           </th>
                           <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                            Payment Method
+                          </th>
+                          <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                             Reference
                           </th>
                           <th scope="col" className={`px-6 py-3 text-center text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
@@ -242,6 +245,9 @@ export default function ViewClientSolde() {
                               }`}>
                                 {['deposit', 'refund'].includes(transaction.operation_type) ? '+' : '-'}
                                 {formatCurrency(transaction.amount)}
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                <span className="capitalize">{transaction.payment_method ? transaction.payment_method.replace('_', ' ') : 'Cash'}</span>
                               </td>
                               <td className={`px-6 py-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`} style={{maxWidth: '200px'}}>
                                 <div className="truncate" title={transaction.reference || 'N/A'}>
@@ -295,6 +301,13 @@ export default function ViewClientSolde() {
                                 </p>
                               </div>
 
+                              <div>
+                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-medium`}>Payment Method</p>
+                                <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'} capitalize`}>
+                                  {transaction.payment_method ? transaction.payment_method.replace('_', ' ') : 'Cash'}
+                                </p>
+                              </div>
+                              
                               {transaction.reference && (
                                 <div>
                                   <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-medium`}>Reference</p>

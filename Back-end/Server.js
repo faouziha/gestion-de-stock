@@ -12,6 +12,7 @@ const brandsRouter = require("./brands_api");
 const clientSoldeRouter = require("./client_solde_routes");
 const reportSetupRouter = require("./report_setup");
 const reportApiRouter = require("./report_api");
+const productsApiRouter = require("./products_api");
 require('dotenv').config();
 
 // Create a database connection pool instead of a single client
@@ -48,6 +49,10 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' })); // Increase payload limit for Base64 images
 app.use(cors());
+
+// Mount routers
+app.use('/reports', reportApiRouter);
+app.use('/products', productsApiRouter);
 
 // Register the multi-client-order router
 app.use('/multi-client-order', multiClientOrdersRouter);
@@ -857,7 +862,7 @@ app.post("/produit", async (req, res) => {
         const parsedTotal = total ? parseInt(total) : null;
         
         const newProduct = await db.query(
-            "INSERT INTO produit (nom, description, image, total, serial_num, fournisseur_id, prix, category_id, userid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+            "INSERT INTO produit (nom, description, image, total, serial_num, fournisseur_id, prix, category_id, userid, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP) RETURNING *",
             [nom, description, image, parsedTotal, serial_num, fournisseur_id, parsedPrice, category_id || null, userid]
         );
         
@@ -3281,6 +3286,48 @@ app.get("/setup/create-client-solde-tables", authenticateAdmin, async (req, res)
     } catch (error) {
         console.error("Error creating client solde tables:", error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Endpoint to get newly added products within a date range for reports
+app.get("/products/new", async (req, res) => {
+    try {
+        const { startDate, endDate, userId } = req.query;
+        
+        if (!startDate || !endDate || !userId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: "Missing required parameters: startDate, endDate, or userId" 
+            });
+        }
+
+        // Query to get products added within the date range
+        // Join with categories and brands to get their names
+        const query = `
+            SELECT p.*, 
+                   c.name AS category_name, 
+                   b.name AS brand_name 
+            FROM produit p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN brands b ON p.brand_id = b.id
+            WHERE p.userid = $1 
+            AND p.created_at BETWEEN $2 AND $3
+            ORDER BY p.created_at DESC
+        `;
+        
+        const result = await db.query(query, [userId, startDate, endDate]);
+        
+        res.json({
+            success: true,
+            products: result.rows
+        });
+    } catch (error) {
+        console.error("Error fetching newly added products:", error);
+        res.status(500).json({ 
+            success: false, 
+            error: "Internal Server Error", 
+            details: error.message 
+        });
     }
 });
 
