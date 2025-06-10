@@ -68,7 +68,7 @@ const createOrUpdateOrderDetails = async (client, orderId, orderItems) => {
     
     // Insert new order details
     for (const item of orderItems) {
-        const productQuery = 'SELECT nom, prix FROM produit WHERE id = $1';
+        const productQuery = 'SELECT nom, prix, total as available_stock FROM produit WHERE id = $1';
         const productResult = await client.query(productQuery, [item.product_id]);
         const product = productResult.rows[0];
         
@@ -80,23 +80,41 @@ const createOrUpdateOrderDetails = async (client, orderId, orderItems) => {
         const quantity = parseInt(item.quantity) || 0;
         const totalPrice = unitPrice * quantity;
         
+        // Calculate delivered and remaining quantities
+        let deliveredQuantity = 0;
+        let remainingQuantity = 0;
+        
+        if (item.delivered_quantity !== undefined) {
+            // Use the provided delivered quantity
+            deliveredQuantity = parseInt(item.delivered_quantity) || 0;
+            remainingQuantity = parseInt(item.remaining_quantity) || 0;
+        } else {
+            // Calculate them based on available stock
+            const availableStock = parseInt(product.available_stock) || 0;
+            deliveredQuantity = Math.min(quantity, availableStock);
+            remainingQuantity = Math.max(0, quantity - deliveredQuantity);
+        }
+        
         await client.query(`
             INSERT INTO order_details 
-            (order_id, produit_id, nom_produit, quantity, unit_price, total_price)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            (order_id, produit_id, nom_produit, quantity, unit_price, total_price, 
+             delivered_quantity, remaining_quantity)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `, [
             orderId,
             item.product_id,
             product.nom,
             quantity,
             unitPrice,
-            totalPrice
+            totalPrice,
+            deliveredQuantity,
+            remainingQuantity
         ]);
         
-        // Update product stock
+        // Update product stock - only reduce by delivered quantity
         await client.query(
             'UPDATE produit SET total = total - $1 WHERE id = $2',
-            [quantity, parseInt(item.product_id)]
+            [deliveredQuantity, parseInt(item.product_id)]
         );
     }
 };

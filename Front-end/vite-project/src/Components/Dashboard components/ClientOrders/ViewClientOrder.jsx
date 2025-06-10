@@ -62,12 +62,16 @@ const ViewClientOrder = () => {
       orderItemsHtml = order.orderItems.map((item, index) => {
         const price = parseFloat(item.price || item.unit_price || item.product_price || 0).toFixed(2);
         const quantity = item.quantity || item.quantite || 0;
+        const delivered = item.delivered_quantity !== undefined ? item.delivered_quantity : '—';
+        const remaining = item.remaining_quantity !== undefined ? item.remaining_quantity : '—';
         const total = (price * quantity).toFixed(2);
         return `
           <tr>
             <td style="padding: 8px; border: 1px solid #ddd">${item.product_name || `Product ${item.product_id}`}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${price}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right">${quantity}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right">${delivered}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right">${remaining}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right">$${total}</td>
           </tr>
         `;
@@ -148,6 +152,8 @@ const ViewClientOrder = () => {
                 <th>Product</th>
                 <th style="text-align: right">Price</th>
                 <th style="text-align: right">Quantity</th>
+                <th style="text-align: right">Delivered</th>
+                <th style="text-align: right">Remaining</th>
                 <th style="text-align: right">Total</th>
               </tr>
             </thead>
@@ -156,15 +162,15 @@ const ViewClientOrder = () => {
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="3" style="text-align: right; padding: 8px;">Subtotal:</td>
+                <td colspan="5" style="text-align: right; padding: 8px;">Subtotal:</td>
                 <td style="text-align: right; padding: 8px;">$${calculateSubtotal(order.orderItems).toFixed(2)}</td>
               </tr>
               <tr>
-                <td colspan="3" style="text-align: right; padding: 8px;">Tax (10%):</td>
+                <td colspan="5" style="text-align: right; padding: 8px;">Tax (10%):</td>
                 <td style="text-align: right; padding: 8px;">$${calculateTax(calculateSubtotal(order.orderItems)).toFixed(2)}</td>
               </tr>
               <tr style="font-weight: bold;">
-                <td colspan="3" style="text-align: right; padding: 8px; border-top: 1px solid #ddd;">Total:</td>
+                <td colspan="5" style="text-align: right; padding: 8px; border-top: 1px solid #ddd;">Total:</td>
                 <td style="text-align: right; padding: 8px; border-top: 1px solid #ddd;">$${orderTotal}</td>
               </tr>
             </tfoot>
@@ -209,8 +215,40 @@ const ViewClientOrder = () => {
         // Log the payment method for debugging
         console.log('Payment method received from API:', orderData.payment_method);
         
+        try {
+          // Fetch additional order details with delivered/remaining quantities
+          const orderDetailsResponse = await axios.get(`http://localhost:3000/order-details/${id}`, {
+            params: { userId: user.id }
+          });
+          
+          const orderDetails = orderDetailsResponse.data;
+          console.log('Order details fetched:', orderDetails);
+          
+          // Enhance order items with the delivery information from order_details
+          if (orderData.orderItems && orderData.orderItems.length > 0 && orderDetails && orderDetails.length > 0) {
+            orderData.orderItems = orderData.orderItems.map(item => {
+              // Find matching detail record by product ID
+              const detail = orderDetails.find(d => 
+                d.produit_id === item.product_id || 
+                d.product_id === item.product_id
+              );
+              
+              if (detail) {
+                return {
+                  ...item,
+                  delivered_quantity: detail.delivered_quantity !== undefined ? detail.delivered_quantity : item.delivered_quantity,
+                  remaining_quantity: detail.remaining_quantity !== undefined ? detail.remaining_quantity : item.remaining_quantity
+                };
+              }
+              return item;
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching order details:', error);
+        }
+        
         setOrder(orderData);
-        console.log('Order data fetched:', orderData);
+        console.log('Order data fetched and enhanced:', orderData);
         
         // Step 2: Try to find the client information
         let clientFound = false;
@@ -483,6 +521,8 @@ const ViewClientOrder = () => {
                 <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium">Product</th>
                 <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Price</th>
                 <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Qty</th>
+                <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Delivered</th>
+                <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Remaining</th>
                 <th className="px-2 sm:px-4 py-2 text-right text-xs sm:text-sm font-medium">Total</th>
               </tr>
             </thead>
@@ -497,25 +537,33 @@ const ViewClientOrder = () => {
                     ${parseFloat(item.price || item.unit_price || item.product_price || 0).toFixed(2)}
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">{item.quantity || item.quantite || 0}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">
+                    {item.delivered_quantity !== undefined ? item.delivered_quantity : 
+                      <span className="text-gray-500">—</span>}
+                  </td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">
+                    {item.remaining_quantity !== undefined ? item.remaining_quantity : 
+                      <span className="text-gray-500">—</span>}
+                  </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-xs sm:text-sm">${calculateItemTotal(item)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-                <td colSpan="3" className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">Subtotal:</td>
+                <td colSpan="5" className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">Subtotal:</td>
                 <td className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">
                   ${calculateSubtotal(order.orderItems).toFixed(2)}
                 </td>
               </tr>
               <tr>
-                <td colSpan="3" className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">Tax (10%):</td>
+                <td colSpan="5" className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">Tax (10%):</td>
                 <td className="px-2 sm:px-4 py-2 text-right font-medium text-xs sm:text-sm">
                   ${calculateTax(calculateSubtotal(order.orderItems)).toFixed(2)}
                 </td>
               </tr>
               <tr className={`border-t-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'} font-bold`}>
-                <td colSpan="3" className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs sm:text-sm">Total:</td>
+                <td colSpan="5" className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs sm:text-sm">Total:</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs sm:text-sm">
                   ${calculateOrderTotal(order.orderItems)}
                 </td>

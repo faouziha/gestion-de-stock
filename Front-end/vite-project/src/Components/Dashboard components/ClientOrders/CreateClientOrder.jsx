@@ -135,11 +135,14 @@ const CreateClientOrder = () => {
     if (name === 'product_id') {
       const selectedProduct = products.find(product => product.id === parseInt(value));
       if (selectedProduct) {
+        const availableStock = getAvailableStock(value);
         newOrderItems[index] = {
           ...newOrderItems[index],
           product_id: value,
           price: selectedProduct.prix, // Set price from selected product
-          total: selectedProduct.prix * newOrderItems[index].quantity
+          total: selectedProduct.prix * newOrderItems[index].quantity,
+          delivered_quantity: 0, // Initialize delivered quantity to 0
+          available_stock: availableStock // Store available stock for reference
         };
       }
     } else if (name === 'quantity') {
@@ -148,28 +151,54 @@ const CreateClientOrder = () => {
       
       if (productId) {
         const availableStock = getAvailableStock(productId);
-        const isValidQuantity = quantity > 0 && quantity <= availableStock;
+        const isValidQuantity = quantity > 0; // Remove the upper limit check
         
         if (isValidQuantity) {
           const price = parseFloat(newOrderItems[index].price);
+          // Calculate what can be delivered now
+          const delivered = Math.min(quantity, availableStock);
+          const remaining = Math.max(0, quantity - delivered);
+          
           newOrderItems[index] = {
             ...newOrderItems[index],
             quantity,
+            delivered_quantity: delivered,
+            remaining_quantity: remaining,
+            available_stock: availableStock,
             total: price * quantity
           };
         } else {
           setFormError({
             ...formError,
-            [`quantity_${index}`]: `Quantity must be between 1 and ${availableStock}`
+            [`quantity_${index}`]: `Quantity must be greater than 0`
           });
           return;
         }
       } else {
         newOrderItems[index] = {
           ...newOrderItems[index],
-          quantity
+          quantity,
+          delivered_quantity: 0,
+          remaining_quantity: quantity
         };
       }
+    } else if (name === 'delivered_quantity') {
+      // Handle changes to the delivered_quantity field
+      const deliveredQty = parseInt(value) || 0;
+      const quantity = newOrderItems[index].quantity || 0;
+      const availableStock = newOrderItems[index].available_stock || 0;
+      
+      // Ensure delivered quantity is within valid range
+      const validDeliveredQty = Math.min(Math.max(0, deliveredQty), availableStock);
+      
+      // Calculate remaining quantity based on total quantity and what will be delivered
+      const remaining = Math.max(0, quantity - validDeliveredQty);
+      
+      newOrderItems[index] = {
+        ...newOrderItems[index],
+        delivered_quantity: validDeliveredQty,
+        remaining_quantity: remaining
+      };
     }
     
     setOrderItems(newOrderItems);
@@ -226,13 +255,11 @@ const CreateClientOrder = () => {
       
       if (item.product_id) {
         const quantity = parseInt(item.quantity);
-        const availableStock = getAvailableStock(item.product_id);
         
         if (!quantity || quantity <= 0) {
           errors[`quantity_${index}`] = 'Quantity must be greater than 0';
-        } else if (quantity > availableStock) {
-          errors[`quantity_${index}`] = `Only ${availableStock} units available`;
         }
+        // We've removed the check that requires quantity <= availableStock
       }
     });
     
@@ -272,13 +299,35 @@ const CreateClientOrder = () => {
       notes: orderData.notes || '',
       total_amount: parseFloat(totalAmount).toFixed(2),
       userId: orderData.userId,
-      orderItems: orderItems.filter(item => item.product_id).map(item => ({
-
-        product_id: parseInt(item.product_id),
-        quantity: parseInt(item.quantity) || 1,
-        price: parseFloat(item.price) || 0,
-        total: parseFloat(item.total) || 0
-      }))
+      orderItems: orderItems.filter(item => item.product_id).map(item => {
+        // Use the user-entered delivered_quantity if available
+        const quantity = parseInt(item.quantity) || 1;
+        const userEnteredDelivered = item.delivered_quantity !== undefined ? parseInt(item.delivered_quantity) : null;
+        
+        // Only fall back to calculated value if user didn't specify one
+        let deliveredQty;
+        if (userEnteredDelivered !== null && !isNaN(userEnteredDelivered)) {
+          // Use user input, but don't exceed the order quantity
+          deliveredQty = Math.min(userEnteredDelivered, quantity);
+        } else {
+          // Fall back to calculated value
+          const availableStock = getAvailableStock(item.product_id);
+          deliveredQty = Math.min(quantity, availableStock);
+        }
+        
+        const remainingQty = Math.max(0, quantity - deliveredQty);
+        
+        console.log(`Item ${item.product_id}: User entered ${userEnteredDelivered}, Using ${deliveredQty}, Remaining ${remainingQty}`);
+        
+        return {
+          product_id: parseInt(item.product_id),
+          quantity: quantity,
+          price: parseFloat(item.price) || 0,
+          total: parseFloat(item.total) || 0,
+          delivered_quantity: deliveredQty,
+          remaining_quantity: remainingQty
+        };
+      })
     };
     
     console.log('Sending order data:', orderPayload);
@@ -595,7 +644,6 @@ const CreateClientOrder = () => {
                       type="number"
                       name="quantity"
                       min="1"
-                      max={item.product_id ? String(getAvailableStock(item.product_id)) : "9999"}
                       value={item.quantity}
                       onChange={(e) => handleOrderItemChange(index, e)}
                       className={`w-full px-3 py-2 rounded-lg border ${
@@ -605,6 +653,11 @@ const CreateClientOrder = () => {
                       } ${formError[`quantity_${index}`] ? 'border-red-500' : ''}`}
                       disabled={submitting || !item.product_id}
                     />
+                    {item.product_id && (
+                      <p className="mt-1 text-xs text-blue-500">
+                        Available in stock: {item.available_stock || getAvailableStock(item.product_id)}
+                      </p>
+                    )}
                     {formError[`quantity_${index}`] && (
                       <p className="mt-1 text-sm text-red-500">{formError[`quantity_${index}`]}</p>
                     )}
@@ -636,6 +689,43 @@ const CreateClientOrder = () => {
                     }`}>
                       ${parseFloat(item.total).toFixed(2)}
                     </div>
+                  </div>
+                </div>
+                
+                {/* Delivery Information - new section */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                  {/* Delivered Quantity - active */}
+                  <div>
+                    <label className={`block mb-2 text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Can be Delivered
+                    </label>
+                    <input
+                      type="number"
+                      name="delivered_quantity"
+                      value={item.delivered_quantity !== undefined ? item.delivered_quantity : (item.product_id ? Math.min(parseInt(item.quantity) || 0, getAvailableStock(item.product_id)) : 0)}
+                      onChange={(e) => handleOrderItemChange(index, e)}
+                      className={`w-full px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Quantity that will be delivered now
+                    </p>
+                  </div>
+                  
+                  {/* Remaining to Deliver - readonly */}
+                  <div>
+                    <label className={`block mb-2 text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Remaining to Deliver
+                    </label>
+                    <div className={`w-full px-3 py-2 rounded-lg border ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-gray-100 border-gray-300 text-gray-900'
+                    } ${item.remaining_quantity > 0 ? 'bg-yellow-50 dark:bg-yellow-900' : ''}`}>
+                      {item.remaining_quantity !== undefined ? item.remaining_quantity : (item.product_id ? Math.max(0, parseInt(item.quantity || 0) - Math.min(parseInt(item.quantity || 0), getAvailableStock(item.product_id))) : 0)}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Quantity that will be delivered later
+                    </p>
                   </div>
                 </div>
 
