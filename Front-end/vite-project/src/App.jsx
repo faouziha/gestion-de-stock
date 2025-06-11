@@ -31,6 +31,7 @@ import AddFactures from './Components/Dashboard components/Factures/AddFactures'
 import ViewFacture from './Components/Dashboard components/Factures/ViewFacture'
 import EditFacture from './Components/Dashboard components/Factures/EditFacture'
 import BonDeLivraison from './Components/Dashboard components/Factures/BonDeLivraison'
+import ViewBonDeLivraison from './Components/Dashboard components/Factures/ViewBonDeLivraison'
 import Admin from './Components/Admin/Admin'
 import DisplaySupplierOrders from './Components/Dashboard components/SupplierOrders/DisplaySupplierOrders'
 import AddSupplierOrder from './Components/Dashboard components/SupplierOrders/AddSupplierOrder'
@@ -102,7 +103,8 @@ function App() {
                 <Route path="/factures/add" element={<AddFactures />} />
                 <Route path="/factures/view/:id" element={<ViewFacture />} />
                 <Route path="/factures/edit/:id" element={<EditFacture />} />
-                <Route path="/factures/bon-de-livraison" element={<BonDeLivraison />} />
+                <Route path="/bon-de-livraison" element={<BonDeLivraison />} />
+                <Route path="/bon-de-livraison/view/:id" element={<ViewBonDeLivraison />} />
                 {/* Supplier Orders Routes */}
                 <Route path="/supplier-orders" element={<DisplaySupplierOrders />} />
                 <Route path="/add-supplier-order" element={<AddSupplierOrder />} />

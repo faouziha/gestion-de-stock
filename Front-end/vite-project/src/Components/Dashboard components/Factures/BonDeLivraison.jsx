@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
+import { Link } from 'react-router-dom';
 import { FaTrash, FaEye, FaFileDownload, FaSearch, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { useTheme } from '../../../context/ThemeContext';
 
@@ -228,13 +229,22 @@ const BonDeLivraison = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-right font-medium">${parseFloat(bl.total || 0).toFixed(2)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">{formatDate(bl.date_created)}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">
-                        <button 
-                          className="p-1.5 text-red-500 hover:text-red-700 transition-colors" 
-                          onClick={() => handleDelete(bl.id)}
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
+                        <div className="flex justify-center space-x-2">
+                          <Link 
+                            to={`/bon-de-livraison/view/${bl.id}`}
+                            className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors"
+                            title="View"
+                          >
+                            <FaEye />
+                          </Link>
+                          <button 
+                            className="p-1.5 text-red-500 hover:text-red-700 transition-colors" 
+                            onClick={() => handleDelete(bl.id)}
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -283,7 +293,15 @@ const BonDeLivraison = () => {
                         </div>
                       </div>
                       
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-4 flex justify-end space-x-4">
+                        <Link 
+                          to={`/bon-de-livraison/view/${bl.id}`}
+                          className="p-2 text-blue-500 hover:text-blue-700"
+                          onClick={(e) => e.stopPropagation()}
+                          title="View"
+                        >
+                          <FaEye />
+                        </Link>
                         <button 
                           className="p-2 text-red-500 hover:text-red-700" 
                           onClick={(e) => {

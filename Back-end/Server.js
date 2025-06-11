@@ -248,6 +248,56 @@ app.get("/setup/create-bl-livraison-table", authenticateAdmin, async (req, res) 
     }
 });
 
+// Endpoint to create bl_items table
+app.get("/setup/create-bl-items-table", authenticateAdmin, async (req, res) => {
+    try {
+        const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS bl_items (
+            id SERIAL PRIMARY KEY,
+            bl_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            product_name TEXT,
+            quantity INTEGER NOT NULL,
+            delivered_quantity INTEGER NOT NULL,
+            remaining_quantity INTEGER NOT NULL,
+            unit_price NUMERIC(10, 2),
+            total_price NUMERIC(10, 2)
+        );
+        `;
+        await db.query(createTableQuery);
+        res.json({ success: true, message: "bl_items table created successfully" });
+    } catch (error) {
+        console.error("Error creating bl_items table:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Function to ensure bl_items table exists
+async function ensureBlItemsTableExists() {
+    try {
+        await db.query("SELECT * FROM bl_items LIMIT 1");
+        return true; // Table exists
+    } catch (err) {
+        // Table doesn't exist, create it
+        const createItemsTableQuery = `
+        CREATE TABLE IF NOT EXISTS bl_items (
+            id SERIAL PRIMARY KEY,
+            bl_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            product_name TEXT,
+            quantity INTEGER NOT NULL,
+            delivered_quantity INTEGER DEFAULT 0,
+            remaining_quantity INTEGER DEFAULT 0,
+            unit_price NUMERIC(10, 2),
+            total_price NUMERIC(10, 2)
+        );
+        `;
+        await db.query(createItemsTableQuery);
+        console.log("Created bl_items table");
+        return true;
+    }
+}
+
 // Endpoint to save a delivered order to bl_livraison (Bon de Livraison)
 app.post("/api/bl/save", async (req, res) => {
     try {
@@ -274,6 +324,9 @@ app.post("/api/bl/save", async (req, res) => {
             `;
             await db.query(createTableQuery);
         }
+        
+        // Ensure the bl_items table exists
+        await ensureBlItemsTableExists();
         
         // Get the order details
         const orderResult = await db.query("SELECT * FROM commande WHERE id = $1 AND userId = $2", [orderId, userId]);
@@ -302,12 +355,12 @@ app.post("/api/bl/save", async (req, res) => {
             totalAmount = 0;
         }
         
-        // Generate a unique BL number based on the order reference
-        const blNumber = `BL-${order.reference || orderId}`;
+        // Count existing BLs for this order to create a unique BL number
+        const existingBLs = await db.query("SELECT COUNT(*) as count FROM bl_livraison WHERE order_id = $1", [orderId]);
+        const blCount = parseInt(existingBLs.rows[0].count) + 1;
         
-        // Check if already saved to our new table
-        const exists = await db.query("SELECT * FROM bl_livraison WHERE order_id = $1", [orderId]);
-        if (exists.rows.length > 0) return res.json({ success: false, error: "Order already saved as BL." });
+        // Generate a unique BL number based on the order reference and count
+        const blNumber = `BL-${order.reference || orderId}-${blCount}`;
         
         // Let's get the total directly from the order record
         console.log("Order data for BL:", order);
@@ -340,13 +393,43 @@ app.post("/api/bl/save", async (req, res) => {
         
         console.log("Final total amount for BL:", totalAmount);
         
-        // Insert into our new bl_livraison table with the calculated total
-        await db.query(
-            "INSERT INTO bl_livraison (order_id, user_id, client_name, reference, bl_number, total, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        // Insert into our bl_livraison table with the calculated total
+        const blResult = await db.query(
+            "INSERT INTO bl_livraison (order_id, user_id, client_name, reference, bl_number, total, notes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
             [order.id, userId, order.customer_name, order.reference, blNumber, totalAmount, order.notes]
         );
         
-        res.json({ success: true });
+        const blId = blResult.rows[0].id;
+        
+        // Get the current order details with delivered and remaining quantities
+        const orderDetailsResult = await db.query(
+            `SELECT od.*, p.nom as product_name, p.prix as product_price 
+            FROM order_details od 
+            LEFT JOIN produit p ON od.produit_id = p.id 
+            WHERE od.order_id = $1`,
+            [orderId]
+        );
+        
+        // Store each order item in bl_items table
+        for (const item of orderDetailsResult.rows) {
+            await db.query(
+                `INSERT INTO bl_items 
+                (bl_id, product_id, product_name, quantity, delivered_quantity, remaining_quantity, unit_price, total_price) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [
+                    blId,
+                    item.produit_id,
+                    item.product_name || item.nom_produit,
+                    item.quantity,
+                    item.delivered_quantity || 0,
+                    item.remaining_quantity || 0,
+                    item.unit_price,
+                    item.total_price
+                ]
+            );
+        }
+        
+        res.json({ success: true, blId: blId });
     } catch (error) {
         console.error("Error saving BL:", error);
         res.status(500).json({ success: false, error: error.message });
@@ -390,6 +473,44 @@ app.get("/api/bl/list", async (req, res) => {
         res.json({ success: true, data: result.rows });
     } catch (error) {
         console.error("Error listing BL:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Endpoint to get a specific BL record by ID
+app.get("/api/bl/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId } = req.query;
+        if (!id || !userId) return res.json({ success: false, error: "Missing id or userId" });
+        
+        const blResult = await db.query("SELECT * FROM bl_livraison WHERE id = $1 AND user_id = $2", [id, userId]);
+        if (blResult.rows.length === 0) return res.json({ success: false, error: "BL not found" });
+        
+        res.json({ success: true, data: blResult.rows[0] });
+    } catch (error) {
+        console.error("Error getting BL:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Endpoint to get BL items for a specific BL
+app.get("/api/bl/:id/items", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId } = req.query;
+        if (!id || !userId) return res.json({ success: false, error: "Missing id or userId" });
+        
+        // First check if the user has access to this BL
+        const blResult = await db.query("SELECT id FROM bl_livraison WHERE id = $1 AND user_id = $2", [id, userId]);
+        if (blResult.rows.length === 0) return res.json({ success: false, error: "BL not found or access denied" });
+        
+        // Get all items for this BL
+        const itemsResult = await db.query("SELECT * FROM bl_items WHERE bl_id = $1", [id]);
+        
+        res.json({ success: true, data: itemsResult.rows });
+    } catch (error) {
+        console.error("Error getting BL items:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

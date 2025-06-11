@@ -507,9 +507,9 @@ export default function DashboardLayout() {
                   Add New Facture
                 </Link>
                 <Link 
-                  to="/factures/bon-de-livraison" 
+                  to="/bon-de-livraison" 
                   className={`px-4 py-2.5 rounded-lg transition-all duration-200 text-sm flex items-center ${
-                    location.pathname === '/factures/bon-de-livraison' 
+                    location.pathname === '/bon-de-livraison' || location.pathname.startsWith('/bon-de-livraison/') 
                       ? `${darkMode ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}` 
                       : `${darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-green-500' : 'hover:bg-green-100 text-green-700 hover:text-green-900'}`
                   }`}
