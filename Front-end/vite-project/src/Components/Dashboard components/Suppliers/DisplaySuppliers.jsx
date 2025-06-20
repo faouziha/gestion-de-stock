@@ -37,12 +37,26 @@ export default function DisplaySuppliers() {
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this supplier?")) {
             try {
-                await axios.delete(`http://localhost:3000/fournisseur/${id}?userId=${user.id}`);
+                console.log('Deleting supplier:', { 
+                    supplierId: id, 
+                    userId: user.id,
+                    user: user // Log the entire user object for debugging
+                });
+                const response = await axios.delete(`http://localhost:3000/fournisseur/${id}?userId=${user.id}`);
+                console.log('Delete response:', response.data);
                 setSuppliers(suppliers.filter(supplier => supplier.id !== id));
                 alert("Supplier deleted successfully!");
             } catch (error) {
-                console.error("Error deleting supplier:", error);
-                alert("Failed to delete supplier. Please try again.");
+                console.error("Error deleting supplier:", {
+                    message: error.message,
+                    response: error.response?.data,
+                    status: error.response?.status,
+                    config: {
+                        url: error.config?.url,
+                        method: error.config?.method
+                    }
+                });
+                alert(`Failed to delete supplier: ${error.response?.data?.error || 'Unknown error'}`);
             }
         }
     };

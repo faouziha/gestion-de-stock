@@ -396,18 +396,20 @@ router.put('/clientorders/:id', async (req, res) => {
     const currentItemsResult = await client.query(currentItemsQuery, [orderId]);
     const currentItems = currentItemsResult.rows;
     
-    // First, restore stock for all current items
+    // First, restore only the previously delivered quantities back to stock
     for (const item of currentItems) {
       await client.query(
         'UPDATE produit SET total = total + $1 WHERE id = $2',
-        [parseInt(item.quantity), parseInt(item.produit_id)]
+        [parseInt(item.delivered_quantity || 0), parseInt(item.produit_id)]
       );
     }
     
-    // Calculate new total amount
+    // Calculate new total amount based on the original quantities
     let totalAmount = 0;
     for (const item of orderItems) {
-      totalAmount += parseFloat(item.total) || 0;
+      const unitPrice = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      totalAmount += unitPrice * quantity;
     }
     
     // Update main order
@@ -439,7 +441,35 @@ router.put('/clientorders/:id', async (req, res) => {
     await client.query(updateOrderQuery, updateOrderValues);
     
     // Update order details - this will delete existing details and create new ones
-    await createOrUpdateOrderDetails(client, orderId, orderItems);
+    // First, ensure we have the latest stock information for each product
+    const updatedOrderItems = [];
+    
+    for (const item of orderItems) {
+      // Get current stock for this product
+      const stockResult = await client.query(
+        'SELECT total as available_stock FROM produit WHERE id = $1',
+        [item.product_id]
+      );
+      
+      const availableStock = stockResult.rows[0]?.available_stock || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      
+      // If we have delivered_quantity in the request, use it
+      // Otherwise, deliver as much as possible from available stock
+      const deliveredQuantity = item.delivered_quantity !== undefined 
+        ? parseInt(item.delivered_quantity) 
+        : Math.min(quantity, availableStock);
+        
+      const remainingQuantity = Math.max(0, quantity - deliveredQuantity);
+      
+      updatedOrderItems.push({
+        ...item,
+        delivered_quantity: deliveredQuantity,
+        remaining_quantity: remainingQuantity
+      });
+    }
+    
+    await createOrUpdateOrderDetails(client, orderId, updatedOrderItems);
     
     await client.query('COMMIT');
     
@@ -465,20 +495,10 @@ router.delete('/clientorders/:id', async (req, res) => {
     
     const orderId = req.params.id;
     
-    // Get all order details to restore stock
-    const detailsQuery = `
-      SELECT * FROM order_details WHERE order_id = $1
-    `;
-    
-    const detailsResult = await client.query(detailsQuery, [orderId]);
-    const orderDetails = detailsResult.rows;
-    
-    // Restore stock for all items
-    for (const item of orderDetails) {
-      await client.query(
-        'UPDATE produit SET total = total + $1 WHERE id = $2',
-        [parseInt(item.quantity), parseInt(item.produit_id)]
-      );
+    // Verify the order exists before attempting to delete
+    const orderCheck = await client.query('SELECT id FROM commande WHERE id = $1', [orderId]);
+    if (orderCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Order not found' });
     }
     
     // Delete the order and its details (order_details will be deleted via cascade)

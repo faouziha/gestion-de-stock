@@ -33,66 +33,68 @@ ChartJS.register(
   Filler
 )
 
-// Helper function to generate month labels for the last 6 months
-function generateMonthLabels() {
-  const months = [];
+// Helper function to generate day labels for the last 30 days
+function generateDayLabels() {
+  const days = [];
   const now = new Date();
   
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(d.toLocaleDateString('en-US', { month: 'short' }));
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
   }
   
-  return months;
+  return days;
 }
 
-// Helper function to process entity data
+// Helper function to process entity data by days
 function processEntityData(data) {
-  // Initialize array with 6 months of data points with zeros
-  const monthCounts = Array(6).fill(0);
+  // Initialize array with 30 days of data points with zeros
+  const dayCounts = Array(30).fill(0);
   const now = new Date();
   
   // If we have data, process it
   if (data && data.length) {
-    // Sort data by month to ensure chronological order
+    // Sort data by date to ensure chronological order
     const sortedData = [...data].sort((a, b) => {
-      return new Date(a.month) - new Date(b.month);
+      return new Date(a.date || a.month) - new Date(b.date || b.month);
     });
     
     // Process each data point
     sortedData.forEach(item => {
       try {
-        // Parse the month string to a Date
-        const itemDate = new Date(item.month);
-        // Calculate how many months ago this data point is
-        const monthsAgo = (now.getFullYear() - itemDate.getFullYear()) * 12 + 
-                         (now.getMonth() - itemDate.getMonth());
+        // Parse the date string to a Date
+        const itemDate = new Date(item.date || item.month);
+        // Calculate the difference in days
+        const diffTime = now - itemDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         
-        // If the data point is within the last 6 months, add it to our result
-        if (monthsAgo >= 0 && monthsAgo < 6) {
-          monthCounts[5 - monthsAgo] = parseInt(item.count) || 0;
+        // If the data point is within the last 30 days, add it to our result
+        if (diffDays >= 0 && diffDays < 30) {
+          dayCounts[29 - diffDays] = parseInt(item.count) || 0;
         }
       } catch (e) {
         console.error('Error processing data point:', item, e);
       }
     });
     
-    // Ensure cumulative counting - each month should be >= the previous month
+    // Ensure cumulative counting - each day should be >= the previous day
     // This ensures the chart shows growth over time
-    for (let i = 1; i < 6; i++) {
-      if (monthCounts[i] < monthCounts[i-1]) {
-        monthCounts[i] = monthCounts[i-1];
+    for (let i = 1; i < 30; i++) {
+      if (dayCounts[i] < dayCounts[i-1]) {
+        dayCounts[i] = dayCounts[i-1];
       }
     }
   }
   
   // If all counts are still zero after processing, add some sample data
   // This ensures we always have something to display
-  if (monthCounts.every(count => count === 0)) {
-    return [1, 1, 2, 2, 3, 3]; // Sample growth pattern
+  if (dayCounts.every(count => count === 0)) {
+    // Generate a simple growth pattern for sample data
+    return Array(30).fill(0).map((_, i) => Math.max(1, Math.floor(i / 3)));
   }
   
-  return monthCounts;
+  return dayCounts;
 }
 
 export default function Dashboard() {
@@ -288,36 +290,37 @@ export default function Dashboard() {
           const clientCount = clientsResponse.data.length;
           const supplierCount = suppliersResponse.data.length;
           
-          // Generate month-by-month data for the last 6 months
-          const generateMonthData = (totalCount) => {
-            const months = [];
+          // Generate day-by-day data for the last 30 days
+          const generateDayData = (totalCount) => {
+            const days = [];
             const now = new Date();
             
             // Start with a small number
-            let currentCount = Math.min(totalCount, 2);
-            if (currentCount === 0) currentCount = 1;
+            let currentCount = Math.min(totalCount, 1);
+            if (currentCount === 0) currentCount = 0;
             
-            for (let i = 5; i >= 0; i--) {
-              const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-              const monthStr = monthDate.toISOString().substring(0, 10);
+            for (let i = 29; i >= 0; i--) {
+              const dayDate = new Date();
+              dayDate.setDate(dayDate.getDate() - i);
+              const dayStr = dayDate.toISOString().split('T')[0];
               
-              months.push({
-                month: monthStr,
+              days.push({
+                date: dayStr,
                 count: currentCount
               });
               
               // Add some random growth but ensure we don't exceed total
-              if (currentCount < totalCount) {
-                currentCount = Math.min(currentCount + Math.floor(Math.random() * 3), totalCount);
+              if (currentCount < totalCount && Math.random() > 0.7) {
+                currentCount = Math.min(currentCount + 1, totalCount);
               }
             }
             
-            return months;
+            return days;
           };
           
           setEntityCounts({
-            clients: generateMonthData(clientCount),
-            suppliers: generateMonthData(supplierCount),
+            clients: generateDayData(clientCount),
+            suppliers: generateDayData(supplierCount),
             clientCount: clientCount,
             supplierCount: supplierCount
           });
@@ -686,7 +689,7 @@ export default function Dashboard() {
             <div className="h-60">
               <Line 
                 data={{
-                  labels: generateMonthLabels(),
+                  labels: generateDayLabels(),
                   datasets: [
                     {
                       label: 'Clients',

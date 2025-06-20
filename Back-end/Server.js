@@ -2070,6 +2070,197 @@ app.put("/fournisseur/:id", async (req, res) => {
     }
 })
 
+// Route to fix the email unique constraint on fournisseur table
+app.get('/fix-email-constraint', async (req, res) => {
+    try {
+        // Drop the existing email unique constraint if it exists
+        await db.query(`
+            ALTER TABLE fournisseur 
+            DROP CONSTRAINT IF EXISTS fournisseur_email_key;
+        `);
+        
+        // Add a new composite unique constraint on (userid, email)
+        await db.query(`
+            ALTER TABLE fournisseur 
+            ADD CONSTRAINT fournisseur_userid_email_key 
+            UNIQUE (userid, email);
+        `);
+        
+        res.json({
+            success: true,
+            message: 'Successfully updated the email constraint to be composite (userid, email)'
+        });
+    } catch (error) {
+        console.error('Error updating email constraint:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Route to fix the registration number constraint on fournisseur table
+app.get('/fix-registration-constraint', async (req, res) => {
+    try {
+        // Drop the existing registration number constraint if it exists
+        await db.query(`
+            ALTER TABLE fournisseur 
+            DROP CONSTRAINT IF EXISTS fournisseur_num_registre_key;
+        `);
+        
+        // Add a new composite unique constraint on (userid, num_registre)
+        await db.query(`
+            ALTER TABLE fournisseur 
+            ADD CONSTRAINT fournisseur_userid_num_registre_key 
+            UNIQUE (userid, num_registre);
+        `);
+        
+        res.json({
+            success: true,
+            message: 'Successfully updated the registration number constraint to be composite (userid, num_registre)'
+        });
+    } catch (error) {
+        console.error('Error updating registration constraint:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Route to fix all constraints at once
+app.get('/fix-all-constraints', async (req, res) => {
+    try {
+        // First, drop the old constraints if they exist
+        const constraintsToDrop = [
+            'fournisseur_email_key',
+            'fournisseur_num_registre_key',
+            'fournisseur_tel_key'
+        ];
+
+        for (const constraint of constraintsToDrop) {
+            try {
+                await db.query(`
+                    ALTER TABLE fournisseur 
+                    DROP CONSTRAINT IF EXISTS ${constraint};
+                `);
+                console.log(`Dropped constraint ${constraint} if it existed`);
+            } catch (e) {
+                console.log(`Error dropping constraint ${constraint}:`, e.message);
+            }
+        }
+
+        // Then, add the new composite constraints if they don't exist
+        const constraintsToAdd = [
+            {
+                name: 'fournisseur_userid_email_key',
+                columns: '(userid, email)'
+            },
+            {
+                name: 'fournisseur_userid_num_registre_key',
+                columns: '(userid, num_registre)'
+            },
+            {
+                name: 'fournisseur_userid_tel_key',
+                columns: '(userid, tel)'
+            }
+        ];
+
+        for (const constraint of constraintsToAdd) {
+            try {
+                await db.query(`
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint 
+                            WHERE conname = '${constraint.name}'
+                        ) THEN
+                            ALTER TABLE fournisseur 
+                            ADD CONSTRAINT ${constraint.name} 
+                            UNIQUE ${constraint.columns};
+                        END IF;
+                    END $$;
+                `);
+                console.log(`Added/verified composite constraint ${constraint.name} on ${constraint.columns}`);
+            } catch (e) {
+                console.log(`Error adding constraint ${constraint.name}:`, e.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'Successfully updated all constraints to support multi-user isolation',
+            note: 'Check server logs for details on which operations were performed',
+            constraints_updated: {
+                dropped: constraintsToDrop,
+                added: constraintsToAdd.map(c => c.name)
+            }
+        });
+    } catch (error) {
+        console.error('Error in fix-all-constraints:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            detail: error.detail || 'No additional details',
+            hint: 'The constraints might already be in the desired state. Try adding a supplier.'
+        });
+    }
+});
+
+// Debug route to check fournisseur table constraints
+app.get('/debug/fournisseur-constraints', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                tc.constraint_name, 
+                tc.constraint_type, 
+                kcu.column_name, 
+                ccu.table_name AS foreign_table_name,
+                ccu.column_name AS foreign_column_name 
+            FROM 
+                information_schema.table_constraints AS tc 
+                JOIN information_schema.key_column_usage AS kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                LEFT JOIN information_schema.constraint_column_usage AS ccu
+                  ON ccu.constraint_name = tc.constraint_name
+                  AND ccu.table_schema = tc.table_schema
+            WHERE tc.table_name = 'fournisseur';
+        `);
+        res.json({
+            success: true,
+            constraints: result.rows
+        });
+    } catch (error) {
+        console.error('Error checking table constraints:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Debug route to check fournisseur table structure
+app.get('/debug/fournisseur-structure', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = 'fournisseur';
+        `);
+        res.json({
+            success: true,
+            columns: result.rows
+        });
+    } catch (error) {
+        console.error('Error checking table structure:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 //delete a fournisseur
 
 app.delete("/fournisseur/:id", async (req, res) => {
@@ -2077,17 +2268,55 @@ app.delete("/fournisseur/:id", async (req, res) => {
         const {id} = req.params;
         const userId = req.query.userId;
         
-        // If userId is provided, ensure the supplier belongs to that user
-        if (userId) {
-            const checkSupplier = await db.query("SELECT * FROM fournisseur WHERE id = $1", [id]);
-            
-            if (checkSupplier.rows.length === 0) {
-                return res.status(404).json({ error: "Supplier not found" });
-            }
-            
-            if (checkSupplier.rows[0].user_id !== userId) {
-                return res.status(403).json({ error: "You don't have permission to delete this supplier" });
-            }
+        console.log('Delete supplier request:', { id, userId });
+        
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        
+        // Check if the supplier exists and belongs to the user
+        const checkSupplier = await db.query("SELECT * FROM fournisseur WHERE id = $1", [id]);
+        
+        if (checkSupplier.rows.length === 0) {
+            console.log('Supplier not found');
+            return res.status(404).json({ error: "Supplier not found" });
+        }
+        
+        const supplier = checkSupplier.rows[0];
+        console.log('Found supplier:', { 
+            id: supplier.id,
+            name: supplier.nom_entreprise,
+            supplierUserId: supplier.userid, // Changed from user_id to userid
+            requestUserId: userId,
+            userIdType: typeof supplier.userid, // Changed from user_id to userid
+            requestUserIdType: typeof userId
+        });
+        
+        // Log the actual query that would be executed
+        console.log('Checking permissions with query:', {
+            query: 'SELECT * FROM fournisseur WHERE id = $1',
+            params: [id],
+            actualUserId: supplier.userid, // Changed from user_id to userid
+            requestedUserId: userId,
+            strictEquality: supplier.userid === userId, // Changed from user_id to userid
+            looseEquality: supplier.userid == userId // Changed from user_id to userid
+        });
+        
+        if (supplier.userid != userId) {
+            console.log('Permission denied - user ID mismatch');
+            return res.status(403).json({ 
+                error: "You don't have permission to delete this supplier",
+                details: {
+                    supplierId: supplier.id,
+                    supplierName: supplier.nom_entreprise,
+                    supplierUserId: supplier.userid,
+                    requestUserId: userId,
+                    userIdType: typeof supplier.userid,
+                    requestUserIdType: typeof userId,
+                    strictEquality: supplier.userid === userId,
+                    looseEquality: supplier.userid == userId
+                }
+            });
         }
         
         const deletedFournisseur = await db.query("DELETE FROM fournisseur WHERE id = $1 RETURNING *", [id]);
